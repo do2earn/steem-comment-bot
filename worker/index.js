@@ -60,7 +60,7 @@ export default {
           "access-control-allow-origin": origin,
           "access-control-allow-credentials": "true",
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "Content-Type",
+          "access-control-allow-headers": "Content-Type, Authorization",
           "access-control-max-age": "600",
           "vary": "Origin"
         }
