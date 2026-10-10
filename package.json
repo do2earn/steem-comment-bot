@@ -1,11 +1,12 @@
 {
   "name": "do2earn-steem-comment-bot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Dry-run discovery of relevant Steem posts for Do2Earn promotional campaigns",
+  "description": "Do2Earn Steem Comment Bot with dry-run discovery and a separate secure login API",
   "type": "module",
   "scripts": {
-    "start": "node src/main.js"
+    "start": "node src/main.js",
+    "check:worker": "node --check worker/index.js"
   },
   "engines": {
     "node": ">=20"
