@@ -22,12 +22,12 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <body><main>
 <header class="brand"><div class="logo" aria-hidden="true">💬</div><div><h1>Steem Comment Bot</h1><p>Do2Earn · Hashtag check and campaign selection</p></div></header>
 <section class="card" id="loginCard">
-<h2>🔐 Secure login</h2><p class="hint">This bot is exclusively for the Steem account @do2earn. The username is fixed and cannot be changed.</p>
-<div class="field"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly aria-readonly="true"></div>
-<div class="field" style="margin-top:10px"><label for="postingKey">Posting Key</label><input id="postingKey" type="password" placeholder="Enter @do2earn Posting Key" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="loginStatus"></div>
+<h2 id="loginHeading">🔐 Secure login</h2><p class="hint" id="loginHint">This bot is exclusively for the Steem account @do2earn. The username is fixed and cannot be changed.</p>
+<div class="field" id="usernameField"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly aria-readonly="true"></div>
+<div class="field" id="postingKeyField" style="margin-top:10px"><label for="postingKey">Posting Key</label><input id="postingKey" type="password" placeholder="Enter @do2earn Posting Key" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="loginStatus"></div>
 <div class="actions"><button id="loginBtn" class="btn btn-primary" type="button">🔒 Login</button><button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Logout</button></div>
 <div id="loginStatus" class="status warn" role="status" aria-live="polite">Enter the Posting Key for @do2earn. The key will be checked in this browser and kept only in memory while this tab remains open.</div>
-<p class="small">Your Posting Key is not sent to a server, saved in browser storage, or written to GitHub. Refreshing or closing this tab logs you out. Use this page only if you trust the GitHub Pages code currently loaded.</p>
+<p class="small" id="loginSecurityNote">Your Posting Key is not sent to a server, saved in browser storage, or written to GitHub. Refreshing or closing this tab logs you out. Use this page only if you trust the GitHub Pages code currently loaded.</p>
 </section>
 <div id="protectedDashboard" hidden>
 <section class="card">
@@ -49,6 +49,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="actions"><button id="previewPublishBtn" class="btn btn-primary" type="button">👁️ Preview &amp; Publish</button><button id="cancelPublishBtn" class="btn btn-secondary" type="button" hidden>Cancel publishing</button></div>
 <div id="candidateList" class="candidate-list" aria-live="polite"></div>
 <div id="publishStatus" class="status warn" role="status" aria-live="polite">Check a hashtag first. Eligible posts will be listed here for preview.</div>
+<div id="publishedResults" class="result" hidden><h3 style="margin:0 0 10px">✅ Successfully published comments</h3><div id="publishedList" class="candidate-list"></div></div>
 <div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
 <div class="notice">Anti-spam safeguards: up to 20 eligible posts per scan, one comment per post, an explicit confirmation before the batch starts, and at least 60 seconds between publishing attempts. You can cancel the batch between attempts.</div>
 </section>
@@ -57,9 +58,10 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 </main>
 <script>
 const API_URL="https://api.steemit.com";
+const loginHeading=document.getElementById("loginHeading"),loginHint=document.getElementById("loginHint"),usernameField=document.getElementById("usernameField"),postingKeyField=document.getElementById("postingKeyField"),loginSecurityNote=document.getElementById("loginSecurityNote");
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus"),campaignSelect=document.getElementById("campaignSelect"),commentEditor=document.getElementById("commentEditor"),previewPublishBtn=document.getElementById("previewPublishBtn"),cancelPublishBtn=document.getElementById("cancelPublishBtn"),progressWrap=document.getElementById("progressWrap"),progressLabel=document.getElementById("progressLabel"),progressPct=document.getElementById("progressPct"),progressBar=document.getElementById("progressBar"),progressDetail=document.getElementById("progressDetail");
-let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0;
+let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0,successfulPosts=[];
 const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
 function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function tagsOf(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(x=>String(x).toLowerCase()):[]}catch{return []}}
@@ -95,10 +97,12 @@ checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",
 // The private key remains in this tab's JavaScript memory only and is never sent to the RPC endpoint.
 function showLoggedIn() {
  isAuthenticated=true;protectedDashboard.hidden=false;postingKeyInput.value="";postingKeyInput.disabled=true;loginBtn.hidden=true;logoutBtn.hidden=false;
+ loginHeading.hidden=true;loginHint.hidden=true;postingKeyField.hidden=true;loginSecurityNote.hidden=true;usernameField.hidden=false;document.getElementById("username").parentElement.querySelector("label").hidden=true;
  loginStatus.textContent="Authenticated as @do2earn. Posting Key is held in memory in this tab only.";loginStatus.className="status ok";
 }
 function showLoggedOut(message="Enter the Posting Key for @do2earn to log in.") {
  isAuthenticated=false;postingKeyInMemory="";candidateQueue=[];lastTag="";candidateList.replaceChildren();countBox.hidden=true;protectedDashboard.hidden=true;postingKeyInput.disabled=false;postingKeyInput.value="";loginBtn.hidden=false;loginBtn.disabled=false;logoutBtn.hidden=true;
+ loginHeading.hidden=false;loginHint.hidden=false;postingKeyField.hidden=false;loginSecurityNote.hidden=false;usernameField.hidden=false;document.getElementById("username").parentElement.querySelector("label").hidden=false;
  loginStatus.textContent=message;loginStatus.className="status warn";publishStatus.textContent="Log in to review and publish comments.";publishStatus.className="status warn";
 }
 loginBtn.addEventListener("click",async()=>{
@@ -141,10 +145,9 @@ function renderCandidates(){
  const heading=document.createElement("p");heading.className="small";heading.textContent="Preview targets ("+candidateQueue.length+"). Publishing will run through this temporary list in order.";candidateList.append(heading);
  candidateQueue.forEach((post,index)=>{
   const card=document.createElement("div");card.className="candidate";
-  const title=document.createElement("strong");title.textContent=(index+1)+". "+(post.title||"(Untitled post)");
+  const title=document.createElement("a");title.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);title.target="_blank";title.rel="noopener noreferrer";title.textContent=(index+1)+". "+(post.title||"(Untitled post)");title.style.fontWeight="700";title.style.fontSize="16px";title.style.color="var(--blue)";title.style.textDecoration="none";
   const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+post.created+" · #"+lastTag;
-  const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open post";
-  card.append(title,meta,link);candidateList.append(card);
+  card.append(title,meta);candidateList.append(card);
  });
 }
 function updateProgress(done,total,success,skipped,failed,detail){
@@ -173,7 +176,7 @@ async function previewAndPublish(){
  const accepted=confirm("PREVIEW & PUBLISH\n\nAccount: @do2earn\nHashtag: #"+lastTag+"\nEligible posts: "+targets.length+"\nMinimum delay: 60 seconds between publishing attempts\n\nCOMMENT PREVIEW:\n\n"+body+"\n\nThe bot will publish this comment to each listed post, one at a time. Only proceed if it is relevant to those posts and complies with Steem/community rules.");
  if(!accepted)return;
  batchRunning=true;stopRequested=false;previewPublishBtn.disabled=true;campaignSelect.disabled=true;commentEditor.disabled=true;checkBtn.disabled=true;clearBtn.disabled=true;cancelPublishBtn.hidden=false;cancelPublishBtn.disabled=false;
- let success=0,skipped=0,failed=0,done=0;const completedIds=new Set();
+ let success=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
  progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch");
  try{
   for(let i=0;i<targets.length;i++){
@@ -195,7 +198,7 @@ async function previewAndPublish(){
    }
    publishStatus.textContent="Publishing "+(i+1)+"/"+targets.length+" to @"+post.author+"…";publishStatus.className="status";
    lastPublishAt=Date.now();
-   try{await publishBodyTo(post,body);success++;completedIds.add(post.author+"/"+post.permlink)}
+   try{await publishBodyTo(post,body);success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink});completedIds.add(post.author+"/"+post.permlink)}
    catch(e){failed++;publishStatus.textContent="Failed for @"+post.author+": "+(e.message||"Steem RPC error");publishStatus.className="status error"}
    done++;updateProgress(done,targets.length,success,skipped,failed,"Last target: @"+post.author);
   }
@@ -203,6 +206,7 @@ async function previewAndPublish(){
   batchRunning=false;previewPublishBtn.disabled=false;campaignSelect.disabled=false;commentEditor.disabled=false;checkBtn.disabled=false;clearBtn.disabled=false;cancelPublishBtn.hidden=true;cancelPublishBtn.disabled=false;
   if(stopRequested){publishStatus.textContent="Batch cancelled. Published: "+success+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+".";publishStatus.className="status warn"}
   else{publishStatus.textContent="Batch finished. Published: "+success+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+".";publishStatus.className=failed?"status warn":"status ok"}
+  if(successfulPosts.length){const box=document.getElementById("publishedResults"),list=document.getElementById("publishedList");list.replaceChildren();successfulPosts.forEach((post,index)=>{const row=document.createElement("div");row.className="candidate";const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent=(index+1)+". "+post.title;link.style.color="var(--blue)";link.style.fontWeight="700";row.append(link);const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author;row.append(meta);list.append(row)});box.hidden=false;}
   candidateQueue=candidateQueue.filter(p=>!completedIds.has(p.author+"/"+p.permlink));
   countEl.textContent=String(candidateQueue.length);countLabel.textContent="remaining eligible post(s) in the temporary queue";queueInfo.textContent="Tag: #"+lastTag+" · Remaining queue: "+candidateQueue.length+" post(s).";
   renderCandidates();
