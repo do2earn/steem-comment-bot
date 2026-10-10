@@ -19,11 +19,15 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 </head>
 <body><main>
 <header class="brand"><div class="logo" aria-hidden="true">💬</div><div><h1>Steem Comment Bot</h1><p>Do2Earn · Hashtag check and campaign selection</p></div></header>
-<section class="card">
-<h2>1. Account</h2><p class="hint">This dashboard is for the Steem account @do2earn.</p>
-<div class="field"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly></div>
-<p class="small">Posting Key connection will be enabled only through a secure server-side endpoint. Do not enter or paste your key into this page.</p>
+<section class="card" id="loginCard">
+<h2>🔐 Secure login</h2><p class="hint">This bot is exclusively for the Steem account @do2earn. The username is fixed and cannot be changed.</p>
+<div class="field"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly aria-readonly="true"></div>
+<div class="field" style="margin-top:10px"><label for="postingKey">Posting Key</label><input id="postingKey" type="password" placeholder="Enter @do2earn Posting Key" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="loginStatus"></div>
+<div class="actions"><button id="loginBtn" class="btn btn-primary" type="button" disabled>🔒 Login</button><button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Logout</button></div>
+<div id="loginStatus" class="status warn" role="status" aria-live="polite">Secure login is not available yet because the server-side authentication endpoint has not been configured. Do not enter your Posting Key until this message changes and login is enabled.</div>
+<p class="small">The key must be verified securely by the server over HTTPS, never saved in this page, browser storage, or the public repository. Until that backend is deployed, all bot controls remain locked.</p>
 </section>
+<div id="protectedDashboard" hidden>
 <section class="card">
 <h2>2. Choose a hashtag</h2><p class="hint">Press Check. The bot will temporarily hold eligible posts and show only the count, not the post list.</p>
 <div class="field"><label for="tagSelect">Popular hashtags</label><select id="tagSelect"><option value="steemgame">#steemgame</option><option value="gaming">#gaming</option><option value="gameplay">#gameplay</option><option value="play2earn">#play2earn</option><option value="steem">#steem</option><option value="crypto">#crypto</option><option value="introduceyourself">#introduceyourself</option><option value="custom">Other hashtag…</option></select></div>
@@ -44,10 +48,12 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div id="publishStatus" class="status warn">Publishing is not enabled yet: the secure backend and Posting Key secret have not been configured. No comments will be sent by this page.</div>
 <div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
 </section>
-<div class="footer">Do2Earn · Temporary queue is stored in this browser tab only</div>
+</div>
+<div class="footer">Do2Earn · This bot is restricted to @do2earn</div>
 </main>
 <script>
 const API_URL="https://api.steemit.com";
+const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),publishBtn=document.getElementById("publishBtn");
 let candidateQueue=[],lastTag="";
 const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
@@ -81,4 +87,7 @@ async function checkPosts(){
 function clearQueue(){candidateQueue=[];lastTag="";countBox.hidden=true;publishBtn.disabled=true;setStatus("Temporary queue cleared. Choose a hashtag and press Check.")}
 tagSelect.addEventListener("change",()=>{if(tagSelect.value!=="custom")customTag.value="";else customTag.focus()});
 checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",clearQueue);customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
+// Fail closed: no client-side/mock login. The dashboard stays locked until a real HTTPS backend validates the Posting Key.
+loginBtn.addEventListener("click",()=>{loginStatus.textContent="Login is unavailable until secure server-side authentication is deployed. Your key has not been sent or saved.";loginStatus.className="status warn";postingKeyInput.value=""});
+logoutBtn.addEventListener("click",()=>{candidateQueue=[];lastTag="";protectedDashboard.hidden=true;countBox.hidden=true;postingKeyInput.value="";loginStatus.textContent="Logged out. The dashboard is locked; no browser session was created.";loginStatus.className="status warn";logoutBtn.hidden=true;loginBtn.hidden=false;loginBtn.disabled=true});
 </script></body></html>
