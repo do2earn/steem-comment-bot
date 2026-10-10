@@ -11,7 +11,7 @@
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101f35,#0a1322 70%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
 main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:flex;gap:12px;align-items:center;margin:8px 0 22px}.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#203b5b;font-size:25px}.brand h1{font-size:clamp(21px,5vw,30px);line-height:1.2;margin:0}.brand p{color:var(--muted);margin:4px 0 0;font-size:14px}
 .card{background:rgba(20,36,59,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px #0002}.card h2{font-size:19px;margin:0 0 7px}.hint{color:var(--muted);font-size:14px;margin:0 0 15px}
-.field label{display:block;font-size:14px;color:#d7e5f7;margin-bottom:6px}.field select,.field input{width:100%;min-height:48px;border:1px solid #47617f;border-radius:11px;background:#0d1b2e;color:var(--text);padding:10px 12px;font:inherit}.field input[type=password]{letter-spacing:.08em}
+.field label{display:block;font-size:14px;color:#d7e5f7;margin-bottom:6px}.field select,.field input,.field textarea{width:100%;min-height:48px;border:1px solid #47617f;border-radius:11px;background:#0d1b2e;color:var(--text);padding:10px 12px;font:inherit}.field textarea{resize:vertical;min-height:180px;line-height:1.55;white-space:pre-wrap}.field input[type=password]{letter-spacing:.08em}
 .actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}.status.warn{color:var(--warn)}
 .result{border:1px solid var(--line);border-radius:14px;background:#102038;padding:16px;margin-top:12px}.bigcount{font-size:clamp(25px,6vw,38px);font-weight:800;color:var(--accent);line-height:1.2}.small{color:var(--muted);font-size:13px}.campaign{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:9px;background:#102038}.campaign input{margin-top:5px;accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto}.campaign strong{display:block}.campaign p{margin:5px 0 0;color:var(--muted);font-size:13px}.progress-wrap{margin-top:16px;display:none}.progress-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:7px}.progress{height:12px;border-radius:99px;background:#091322;overflow:hidden;border:1px solid #304765}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}.notice{border-left:3px solid var(--warn);padding:10px 12px;background:#2b2a25;border-radius:7px;color:#f5e6c5;font-size:13px;margin-top:12px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
@@ -40,15 +40,18 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="notice">The search can only check posts returned by the public Steem API. This first version does not claim to have searched all historical posts.</div>
 </section>
 <section class="card">
-<h2>3. Choose a promotional comment</h2><p class="hint">Choose one campaign message. The selected message will be used only after secure publishing is configured.</p>
-<div id="campaigns">
-<label class="campaign"><input type="radio" name="campaign" value="0" checked><span><strong>Steem Flags — Discover the game</strong><p>🎮 Looking for another game to try on Steem? Check out Steem Flags by Do2Earn — a free flag-guessing game built for the Steem community: https://steemflags.do2earn.dev<br><br>If you give it a try, feedback is always welcome!</p></span></label>
-<label class="campaign"><input type="radio" name="campaign" value="1"><span><strong>Steem Flags — Gaming community</strong><p>🎯 Enjoy games on Steem? You may like Steem Flags, a free flag-guessing game from Do2Earn: https://steemflags.do2earn.dev<br><br>Feedback from Steem gamers is welcome!</p></span></label>
-<label class="campaign"><input type="radio" name="campaign" value="2"><span><strong>Steem Flags — Quick invitation</strong><p>🕹️ Try Steem Flags by Do2Earn — a free flag-guessing game for the Steem community: https://steemflags.do2earn.dev</p></span></label>
-</div>
+<h2>3. Promotional comment</h2><p class="hint">Campaign messages are saved as separate HTML files. Select one, edit it below, preview the target posts, then explicitly confirm before publishing.</p>
+<div class="field"><label for="campaignSelect">Saved HTML comment</label><select id="campaignSelect">
+<option value="campaigns/steem-flags-discover.html">Steem Flags — Discover the game</option>
+<option value="campaigns/steem-flags-community.html">Steem Flags — Gaming community</option>
+<option value="campaigns/steem-flags-quick.html">Steem Flags — Quick invitation</option>
+</select></div>
+<div class="field" style="margin-top:12px"><label for="commentEditor">Comment editor (editable)</label><textarea id="commentEditor" rows="8" spellcheck="true" placeholder="Select a saved HTML comment to load its text…"></textarea></div>
+<div class="actions"><button id="previewPublishBtn" class="btn btn-primary" type="button">👁️ Preview &amp; Publish</button><button id="cancelPublishBtn" class="btn btn-secondary" type="button" hidden>Cancel publishing</button></div>
 <div id="candidateList" class="candidate-list" aria-live="polite"></div>
-<div id="publishStatus" class="status warn">No comment will be published automatically. Review each post and approve any comment individually.</div>
+<div id="publishStatus" class="status warn" role="status" aria-live="polite">Check a hashtag first. Eligible posts will be listed here for preview.</div>
 <div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
+<div class="notice">Anti-spam safeguards: up to 20 eligible posts per scan, one comment per post, an explicit confirmation before the batch starts, and at least 60 seconds between publishing attempts. You can cancel the batch between attempts.</div>
 </section>
 </div>
 <div class="footer">Do2Earn · This bot is restricted to @do2earn</div>
@@ -56,7 +59,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <script>
 const API_URL="https://api.steemit.com";
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
-const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus");
+const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus"),campaignSelect=document.getElementById("campaignSelect"),commentEditor=document.getElementById("commentEditor"),previewPublishBtn=document.getElementById("previewPublishBtn"),cancelPublishBtn=document.getElementById("cancelPublishBtn"),progressWrap=document.getElementById("progressWrap"),progressLabel=document.getElementById("progressLabel"),progressPct=document.getElementById("progressPct"),progressBar=document.getElementById("progressBar"),progressDetail=document.getElementById("progressDetail");
 let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0;
 const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
 function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -88,7 +91,7 @@ async function checkPosts(){
 }
 function clearQueue(){candidateQueue=[];lastTag="";candidateList.replaceChildren();countBox.hidden=true;setStatus("Temporary queue cleared. Choose a hashtag and press Check.")}
 tagSelect.addEventListener("change",()=>{if(tagSelect.value!=="custom")customTag.value="";else customTag.focus()});
-checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",clearQueue);customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
+checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",()=>{if(batchRunning)return;clearQueue();renderCandidates()});customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
 // Browser-only login: verify the entered Posting Key against @do2earn's public posting authority.
 // The private key remains in this tab's JavaScript memory only and is never sent to the RPC endpoint.
 function showLoggedIn() {
@@ -117,43 +120,98 @@ loginBtn.addEventListener("click",async()=>{
  finally{loginBtn.disabled=false}
 });
 logoutBtn.addEventListener("click",()=>showLoggedOut("Logged out. The key was cleared from this page's memory."));
-async function publishCandidate(index,button){
- if(!isAuthenticated||!postingKeyInMemory){showLoggedOut("Session expired. Enter the Posting Key again.");return}
- const post=candidateQueue[index];if(!post)return;
- const campaignIndex=Number(document.querySelector('input[name="campaign"]:checked')?.value||0);
- const messages=[
-  "🎮 Looking for another game to try on Steem? Check out Steem Flags by Do2Earn — a free flag-guessing game built for the Steem community: https://steemflags.do2earn.dev\n\nIf you give it a try, feedback is always welcome!",
-  "🎯 Enjoy games on Steem? You may like Steem Flags, a free flag-guessing game from Do2Earn: https://steemflags.do2earn.dev\n\nFeedback from Steem gamers is welcome!",
-  "🕹️ Try Steem Flags by Do2Earn — a free flag-guessing game for the Steem community: https://steemflags.do2earn.dev"
- ];
- const body=messages[campaignIndex]||messages[0];
- if(Date.now()-lastPublishAt<60000){publishStatus.textContent="For safety, wait at least 60 seconds between manually approved comments.";publishStatus.className="status warn";return}
- if(!confirm("Publish this promotional comment as @do2earn on @"+post.author+"/"+post.permlink+"?\n\n"+body+"\n\nOnly continue if the comment is relevant to the post and allowed by the community."))return;
- if(!window.steem?.broadcast?.comment){publishStatus.textContent="The Steem publishing library is unavailable. Refresh the page and try again.";publishStatus.className="status error";return}
- button.disabled=true;publishStatus.textContent="Signing and submitting the approved comment…";publishStatus.className="status";
+let isAuthenticated=false;
+let batchRunning=false,stopRequested=false,loadedTemplatePath="";
+const MIN_PUBLISH_INTERVAL=60000;
+async function loadSelectedTemplate(){
+ const path=campaignSelect.value;campaignSelect.disabled=true;
+ publishStatus.textContent="Loading saved HTML comment…";publishStatus.className="status";
  try{
-  const permlink="comment-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
-  const result=await new Promise((resolve,reject)=>window.steem.broadcast.comment(
-   postingKeyInMemory,post.author,post.permlink,"do2earn",permlink,"",body,
-   JSON.stringify({app:"do2earn-steem-comment-bot/0.3.0",tags:["steemgame","gaming"]}),
-   (err,res)=>err?reject(err):resolve(res)
-  ));
-  lastPublishAt=Date.now();candidateQueue.splice(index,1);renderCandidates();
-  publishStatus.textContent="Comment published successfully. Transaction: "+(result?.id||"confirmed by Steem RPC")+". Review the next post before publishing.";publishStatus.className="status ok";
- }catch(e){publishStatus.textContent="Publishing failed: "+(e.message||"Steem RPC error")+". The key remains only in this tab's memory.";publishStatus.className="status error";button.disabled=false}
+  const res=await fetch(path,{cache:"no-store"});if(!res.ok)throw new Error("HTTP "+res.status);
+  const source=await res.text();const doc=new DOMParser().parseFromString(source,"text/html");
+  const body=doc.querySelector("[data-comment-body]");if(!body)throw new Error("The HTML file does not contain a comment body.");
+  commentEditor.value=body.textContent.trim();loadedTemplatePath=path;
+  publishStatus.textContent="Template loaded. You can edit the comment before publishing.";publishStatus.className="status ok";
+ }catch(e){commentEditor.value="";loadedTemplatePath="";publishStatus.textContent="Could not load the saved HTML template: "+(e.message||"unknown error");publishStatus.className="status error"}
+ finally{campaignSelect.disabled=false}
 }
+campaignSelect.addEventListener("change",loadSelectedTemplate);
 function renderCandidates(){
  candidateList.replaceChildren();
- if(!candidateQueue.length){candidateList.innerHTML='<p class="small">No candidates to show. Press Check to search again.</p>';return}
+ if(!candidateQueue.length){candidateList.innerHTML='<p class="small">No eligible posts are queued. Choose a hashtag and press Check.</p>';return}
+ const heading=document.createElement("p");heading.className="small";heading.textContent="Preview targets ("+candidateQueue.length+"). Publishing will run through this temporary list in order.";candidateList.append(heading);
  candidateQueue.forEach((post,index)=>{
   const card=document.createElement("div");card.className="candidate";
-  const title=document.createElement("strong");title.textContent=post.title||"(Untitled post)";
-  const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+post.created+" · "+lastTag;
+  const title=document.createElement("strong");title.textContent=(index+1)+". "+(post.title||"(Untitled post)");
+  const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+post.created+" · #"+lastTag;
   const link=document.createElement("a");link.href="https://steemit.com/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open post";
-  const button=document.createElement("button");button.className="btn btn-primary";button.type="button";button.textContent="Review & publish";button.addEventListener("click",()=>publishCandidate(index,button));
-  card.append(title,meta,link,button);candidateList.append(card);
+  card.append(title,meta,link);candidateList.append(card);
  });
 }
-let isAuthenticated=false;
+function updateProgress(done,total,success,skipped,failed,detail){
+ const pct=total?Math.round(done/total*100):0;
+ progressWrap.style.display="block";progressLabel.textContent=done+" of "+total+" processed";progressPct.textContent=pct+"%";progressBar.style.width=pct+"%";
+ progressDetail.textContent="Published: "+success+" · Skipped: "+skipped+" · Failed: "+failed+(detail?" · "+detail:"");
+}
+function waitMs(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+async function publishBodyTo(post,body){
+ return new Promise((resolve,reject)=>{
+  const permlink="comment-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+  window.steem.broadcast.comment(postingKeyInMemory,post.author,post.permlink,"do2earn",permlink,"",body,
+   JSON.stringify({app:"do2earn-steem-comment-bot/0.4.0",tags:[lastTag||"steem"]}),
+   (err,result)=>err?reject(err):resolve(result));
+ });
+}
+async function previewAndPublish(){
+ if(batchRunning)return;
+ if(!isAuthenticated||!postingKeyInMemory){showLoggedOut("Session expired. Enter the Posting Key again.");return}
+ if(!candidateQueue.length){publishStatus.textContent="No eligible posts. Choose a hashtag and press Check first.";publishStatus.className="status warn";return}
+ const body=commentEditor.value.trim();
+ if(!body){publishStatus.textContent="The comment editor is empty.";publishStatus.className="status error";return}
+ if(!loadedTemplatePath){publishStatus.textContent="Select and load a saved HTML comment first.";publishStatus.className="status error";return}
+ if(body.length>10000){publishStatus.textContent="The comment is too long. Please shorten it.";publishStatus.className="status error";return}
+ const targets=candidateQueue.slice();
+ const accepted=confirm("PREVIEW & PUBLISH\n\nAccount: @do2earn\nHashtag: #"+lastTag+"\nEligible posts: "+targets.length+"\nMinimum delay: 60 seconds between publishing attempts\n\nCOMMENT PREVIEW:\n\n"+body+"\n\nThe bot will publish this comment to each listed post, one at a time. Only proceed if it is relevant to those posts and complies with Steem/community rules.");
+ if(!accepted)return;
+ batchRunning=true;stopRequested=false;previewPublishBtn.disabled=true;campaignSelect.disabled=true;commentEditor.disabled=true;checkBtn.disabled=true;clearBtn.disabled=true;cancelPublishBtn.hidden=false;cancelPublishBtn.disabled=false;
+ let success=0,skipped=0,failed=0,done=0;const completedIds=new Set();
+ progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch");
+ try{
+  for(let i=0;i<targets.length;i++){
+   if(stopRequested)break;
+   const post=targets[i];
+   try{
+    const replies=await rpc("condenser_api.get_content_replies",[post.author,post.permlink]);
+    if(hasPromoComment(replies)){skipped++;done++;completedIds.add(post.author+"/"+post.permlink);updateProgress(done,targets.length,success,skipped,failed,"Skipped existing @do2earn promotion");continue}
+   }catch(e){failed++;done++;updateProgress(done,targets.length,success,skipped,failed,"Could not verify replies for @"+post.author);continue}
+   const waitFor=Math.max(0,MIN_PUBLISH_INTERVAL-(Date.now()-lastPublishAt));
+   if(waitFor>0){
+    const until=Date.now()+waitFor;
+    while(Date.now()<until&&!stopRequested){
+     const remaining=Math.ceil((until-Date.now())/1000);
+     publishStatus.textContent="Anti-spam pause: next attempt in "+remaining+" seconds. You can cancel the batch.";publishStatus.className="status warn";
+     await waitMs(Math.min(1000,until-Date.now()));
+    }
+    if(stopRequested)break;
+   }
+   publishStatus.textContent="Publishing "+(i+1)+"/"+targets.length+" to @"+post.author+"…";publishStatus.className="status";
+   lastPublishAt=Date.now();
+   try{await publishBodyTo(post,body);success++;completedIds.add(post.author+"/"+post.permlink)}
+   catch(e){failed++;publishStatus.textContent="Failed for @"+post.author+": "+(e.message||"Steem RPC error");publishStatus.className="status error"}
+   done++;updateProgress(done,targets.length,success,skipped,failed,"Last target: @"+post.author);
+  }
+ }finally{
+  batchRunning=false;previewPublishBtn.disabled=false;campaignSelect.disabled=false;commentEditor.disabled=false;checkBtn.disabled=false;clearBtn.disabled=false;cancelPublishBtn.hidden=true;cancelPublishBtn.disabled=false;
+  if(stopRequested){publishStatus.textContent="Batch cancelled. Published: "+success+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+".";publishStatus.className="status warn"}
+  else{publishStatus.textContent="Batch finished. Published: "+success+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+".";publishStatus.className=failed?"status warn":"status ok"}
+  candidateQueue=candidateQueue.filter(p=>!completedIds.has(p.author+"/"+p.permlink));
+  countEl.textContent=String(candidateQueue.length);countLabel.textContent="remaining eligible post(s) in the temporary queue";queueInfo.textContent="Tag: #"+lastTag+" · Remaining queue: "+candidateQueue.length+" post(s).";
+  renderCandidates();
+ }
+}
+previewPublishBtn.addEventListener("click",previewAndPublish);
+cancelPublishBtn.addEventListener("click",()=>{if(batchRunning){stopRequested=true;cancelPublishBtn.disabled=true;publishStatus.textContent="Cancellation requested; waiting for the current operation to finish.";publishStatus.className="status warn"}});
+loadSelectedTemplate();
+
 
 </script></body></html>
