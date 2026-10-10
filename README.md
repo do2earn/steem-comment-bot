@@ -4,7 +4,7 @@ Private project for account @do2earn. The discovery workflow remains dry-run onl
 
 ## Secure login API (Cloudflare Worker)
 
-The Worker provides fixed-account login, an HttpOnly Secure SameSite session cookie, server-side session revocation on logout, and D1-backed session expiry. It accepts only username `do2earn` and a Posting Key matching the Worker Secret `STEEM_POSTING_KEY`. The submitted key is never logged or stored in D1; only a hash of a random session token is stored.
+The Worker provides fixed-account login, server-side session revocation on logout, and D1-backed session expiry. It accepts only username `do2earn` and a Posting Key matching the Worker Secret `STEEM_POSTING_KEY`. The submitted key is never logged or stored in D1; only a hash of a random session token is stored. The dashboard keeps the returned session token in tab-scoped `sessionStorage` so a refresh in the same tab can restore the session; it never stores the Posting Key.
 
 **Important:** the dashboard does not enable login until the Worker is deployed and the placeholder API URL in `index.html` and the website copy is replaced with the real Worker URL. There is no publishing endpoint in this version; signing in cannot publish anything.
 
@@ -23,7 +23,7 @@ The Worker provides fixed-account login, an HttpOnly Secure SameSite session coo
 ### Security notes
 
 - Only the exact origins `https://do2earn.dev` and `https://www.do2earn.dev` are allowed by CORS.
-- Sessions expire after 8 hours; logout deletes the server-side session and clears the cookie.
+- Sessions expire after 8 hours; logout deletes the server-side session and clears the tab-scoped session token.
 - Do not use the Posting Key anywhere except the HTTPS login form. The Worker compares it to its configured secret and discards the submitted value.
 - This login restricts the web dashboard. Any future search/publish endpoint must independently require a valid server session and enforce rate limits, duplicate protection, and human approval.
 - Current code intentionally has no comment publishing endpoint.
