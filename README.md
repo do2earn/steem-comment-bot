@@ -1,29 +1,33 @@
 # Do2Earn Steem Comment Bot
 
-Private project for account @do2earn. The discovery workflow remains dry-run only and does not publish comments.
+Browser-based tool for the Steem account **@do2earn**. It does not use Cloudflare Worker, Cloudflare D1, or a server-side login service.
 
-## Secure login API (Cloudflare Worker)
+## Browser-only login
 
-The Worker provides fixed-account login, server-side session revocation on logout, and D1-backed session expiry. It accepts only username `do2earn` and a Posting Key matching the Worker Secret `STEEM_POSTING_KEY`. The submitted key is never logged or stored in D1; only a hash of a random session token is stored. The dashboard keeps the returned session token in tab-scoped `sessionStorage` so a refresh in the same tab can restore the session; it never stores the Posting Key.
+- The username is fixed to `@do2earn`.
+- Enter the Posting Key only into the login form on the page.
+- The page derives the key's public key locally and checks it against the public posting authority for `@do2earn` through the public Steem RPC. The private key is not sent to the RPC endpoint.
+- The key stays only in JavaScript memory in the current tab. It is not written to localStorage, sessionStorage, GitHub, or a database.
+- Logout clears the in-memory key. Refreshing or closing the tab also loses the key and requires signing in again.
+- The page loads the SteemJS library from jsDelivr. If the library is unavailable, login and publishing will not work.
 
-**Important:** the dashboard does not enable login until the Worker is deployed and the placeholder API URL in `index.html` and the website copy is replaced with the real Worker URL. There is no publishing endpoint in this version; signing in cannot publish anything.
+## Using the dashboard
 
-### Deploy prerequisites
+1. Open the GitHub Pages site for this repository.
+2. Enter the Posting Key for `@do2earn` and select **Login**.
+3. Choose a hashtag and press **Check**.
+4. Open each candidate post and review whether a promotional comment is genuinely relevant.
+5. Select a campaign message and use **Review & publish** for one post at a time. Each comment requires a confirmation prompt; the page enforces at least 60 seconds between successful posts.
+6. Log out when finished.
 
-1. In Cloudflare, create a D1 database named `steem-comment-bot-sessions`.
-2. Copy its database ID into `wrangler.toml`, replacing `REPLACE_WITH_D1_DATABASE_ID`.
-3. Set repository Actions secrets:
-   - `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit and D1: Edit permissions)
-   - `CLOUDFLARE_ACCOUNT_ID`
-4. In Cloudflare Workers & Pages, set Worker Secret `STEEM_POSTING_KEY` to the Posting Key for @do2earn. Never commit it or send it in chat.
-5. Run **Deploy Steem Comment Bot API** from GitHub Actions.
-6. Replace `https://steem-comment-bot-api.YOUR-SUBDOMAIN.workers.dev` in both dashboard HTML files with the actual Worker URL, then commit.
-7. Check `https://<your-worker>.workers.dev/api/health` from the dashboard origin; it should return `{"ok":true,"authConfigured":true}` when secrets and D1 are configured.
+The page checks a limited sample of recent posts from the public Steem API; it cannot search all historical posts. Duplicate detection is based on recognized promotional text in replies and is not guaranteed to catch every variation. Please follow Steem community rules and avoid irrelevant or repetitive comments. There is no automatic bulk publishing.
 
-### Security notes
+## GitHub Actions
 
-- Only the exact origins `https://do2earn.dev` and `https://www.do2earn.dev` are allowed by CORS.
-- Sessions expire after 8 hours; logout deletes the server-side session and clears the tab-scoped session token.
-- Do not use the Posting Key anywhere except the HTTPS login form. The Worker compares it to its configured secret and discards the submitted value.
-- This login restricts the web dashboard. Any future search/publish endpoint must independently require a valid server session and enforce rate limits, duplicate protection, and human approval.
-- Current code intentionally has no comment publishing endpoint.
+`.github/workflows/bot.yml` remains a scheduled **dry run** that discovers a small sample and prints suggestions to the Actions log. It does not publish comments and does not need a Posting Key or repository secrets.
+
+## Security notes
+
+- Never paste a Posting Key into a GitHub issue, commit, chat, or workflow log.
+- The private key is handled locally by the page, but the page's JavaScript is downloaded from GitHub Pages and the SteemJS dependency is loaded from jsDelivr. Only enter your key when you trust the code currently being served.
+- Browser-only mode works only while the page is open. It does not run unattended after the tab closes.
