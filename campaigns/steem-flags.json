@@ -1,0 +1,16 @@
+{
+  "id": "steem-flags",
+  "name": "Steem Flags",
+  "enabled": true,
+  "tags": [
+    "steemgame"
+  ],
+  "keywords": [
+    "steem game",
+    "steemgame",
+    "gaming",
+    "gameplay"
+  ],
+  "comment": "🎮 Looking for another game to try on Steem? Check out Steem Flags by Do2Earn — a free flag-guessing game built for the Steem community: https://steemflags.do2earn.dev\n\nIf you give it a try, feedback is always welcome!",
+  "note": "Starter copy only. Review relevance and community rules before any future manual use."
+}
