@@ -68,7 +68,7 @@ async function checkPosts(){
  const tag=(customTag.value.trim()||(tagSelect.value==="custom"?"":tagSelect.value)).replace(/^#+/,"").toLowerCase();
  if(!tag){setStatus("Please choose or enter a hashtag first.","error");return}
  if(!/^[a-z0-9-]{1,32}$/.test(tag)){setStatus("Use only English letters, numbers, and hyphens in the hashtag.","error");return}
- checkBtn.disabled=true;checkBtn.textContent="⏳ Checking…";publishBtn.disabled=true;countBox.hidden=true;candidateQueue=[];lastTag=tag;setStatus("Searching recent posts tagged #"+tag+"…");
+ checkBtn.disabled=true;checkBtn.textContent="⏳ Checking…";countBox.hidden=true;candidateQueue=[];lastTag=tag;setStatus("Searching recent posts tagged #"+tag+"…");
  try{
   const posts=await rpc("condenser_api.get_discussions_by_created",[{tag,limit:100}]);
   const matching=(Array.isArray(posts)?posts:[]).filter(p=>p&&p.author&&p.permlink&&String(p.author).toLowerCase()!=="do2earn"&&tagsOf(p).includes(tag));
