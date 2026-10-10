@@ -1,4 +1,5 @@
 name: Deploy Steem Comment Bot Website
+# Pages source is configured as GitHub Actions in repository settings.
 
 on:
   push:
