@@ -4,87 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14243b">
-<title>Steem Comment Bot | Post Finder</title>
+<title>Steem Comment Bot | Do2Earn</title>
 <style>
-:root{color-scheme:dark;--bg:#0c1728;--panel:#14243b;--panel2:#1a2d48;--line:#304765;--text:#eef5ff;--muted:#a9bad0;--accent:#65e6a6;--blue:#7bb8ff}
+:root{color-scheme:dark;--bg:#0c1728;--panel:#14243b;--line:#304765;--text:#eef5ff;--muted:#a9bad0;--accent:#65e6a6;--blue:#7bb8ff;--warn:#ffd27d}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101f35,#0a1322 70%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
-main{width:min(900px,100%);margin:auto;padding:22px 15px 50px}.brand{display:flex;gap:12px;align-items:center;margin:8px 0 22px}.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#203b5b;font-size:25px}.brand h1{font-size:clamp(21px,5vw,30px);line-height:1.2;margin:0}.brand p{color:var(--muted);margin:4px 0 0;font-size:14px}
+main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:flex;gap:12px;align-items:center;margin:8px 0 22px}.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#203b5b;font-size:25px}.brand h1{font-size:clamp(21px,5vw,30px);line-height:1.2;margin:0}.brand p{color:var(--muted);margin:4px 0 0;font-size:14px}
 .card{background:rgba(20,36,59,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px #0002}.card h2{font-size:19px;margin:0 0 7px}.hint{color:var(--muted);font-size:14px;margin:0 0 15px}
-.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.field label{display:block;font-size:14px;color:#d7e5f7;margin-bottom:6px}.field select,.field input{width:100%;min-height:48px;border:1px solid #47617f;border-radius:11px;background:#0d1b2e;color:var(--text);padding:10px 12px;font:inherit}
-.actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.6;cursor:wait}
-.status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}
-.result-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.result-head h2{margin:0}.count{color:var(--accent);font-size:14px;white-space:nowrap}
-.post{border:1px solid var(--line);border-radius:14px;background:#102038;padding:14px;margin-top:10px}.post-title{font-weight:750;font-size:17px;line-height:1.35;margin:0 0 7px}.post-title a{color:#eaf4ff;text-decoration:none}.post-title a:hover{color:var(--blue);text-decoration:underline}.meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 12px;margin-bottom:8px}.excerpt{color:#d1dcec;font-size:14px;overflow-wrap:anywhere}.tag{display:inline-block;background:#244363;color:#bfe0ff;border-radius:6px;padding:2px 7px;font-size:12px;margin:2px 3px 0 0}.empty{color:var(--muted);text-align:center;padding:25px 10px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
-@media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.controls{grid-template-columns:1fr}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}.post{padding:12px}.result-head{align-items:flex-start;flex-direction:column;gap:3px}}
+.field label{display:block;font-size:14px;color:#d7e5f7;margin-bottom:6px}.field select,.field input{width:100%;min-height:48px;border:1px solid #47617f;border-radius:11px;background:#0d1b2e;color:var(--text);padding:10px 12px;font:inherit}.field input[type=password]{letter-spacing:.08em}
+.actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}.status.warn{color:var(--warn)}
+.result{border:1px solid var(--line);border-radius:14px;background:#102038;padding:16px;margin-top:12px}.bigcount{font-size:clamp(25px,6vw,38px);font-weight:800;color:var(--accent);line-height:1.2}.small{color:var(--muted);font-size:13px}.campaign{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:9px;background:#102038}.campaign input{margin-top:5px;accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto}.campaign strong{display:block}.campaign p{margin:5px 0 0;color:var(--muted);font-size:13px}.progress-wrap{margin-top:16px;display:none}.progress-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:7px}.progress{height:12px;border-radius:99px;background:#091322;overflow:hidden;border:1px solid #304765}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}.notice{border-left:3px solid var(--warn);padding:10px 12px;background:#2b2a25;border-radius:7px;color:#f5e6c5;font-size:13px;margin-top:12px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
+@media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}}
 </style>
 </head>
-<body>
-<main>
-<header class="brand"><div class="logo" aria-hidden="true">🔎</div><div><h1>Steem Comment Bot</h1><p>Find recent public posts by hashtag</p></div></header>
+<body><main>
+<header class="brand"><div class="logo" aria-hidden="true">💬</div><div><h1>Steem Comment Bot</h1><p>Do2Earn · Hashtag check and campaign selection</p></div></header>
 <section class="card">
-<h2>Choose a hashtag</h2>
-<p class="hint">Select a tag or type another one, then press Check to load recent posts from Steem.</p>
-<div class="controls">
+<h2>1. Account</h2><p class="hint">This dashboard is for the Steem account @do2earn.</p>
+<div class="field"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly></div>
+<p class="small">Posting Key connection will be enabled only through a secure server-side endpoint. Do not enter or paste your key into this page.</p>
+</section>
+<section class="card">
+<h2>2. Choose a hashtag</h2><p class="hint">Press Check. The bot will temporarily hold eligible posts and show only the count, not the post list.</p>
 <div class="field"><label for="tagSelect">Popular hashtags</label><select id="tagSelect"><option value="steemgame">#steemgame</option><option value="gaming">#gaming</option><option value="gameplay">#gameplay</option><option value="play2earn">#play2earn</option><option value="steem">#steem</option><option value="crypto">#crypto</option><option value="introduceyourself">#introduceyourself</option><option value="custom">Other hashtag…</option></select></div>
-<div class="field"><label for="customTag">Or enter a hashtag</label><input id="customTag" type="text" placeholder="e.g. steemgame" autocomplete="off" maxlength="32"></div>
-</div>
-<div class="actions"><button id="checkBtn" class="btn btn-primary" type="button">🔎 Check posts</button><button id="clearBtn" class="btn btn-secondary" type="button">Clear results</button></div>
+<div class="field" style="margin-top:10px"><label for="customTag">Custom hashtag (optional)</label><input id="customTag" placeholder="e.g. steemgame" autocomplete="off" maxlength="32"></div>
+<div class="actions"><button id="checkBtn" class="btn btn-primary" type="button">🔎 Check</button><button id="clearBtn" class="btn btn-secondary" type="button">Clear temporary queue</button></div>
 <div id="status" class="status" role="status" aria-live="polite">Ready. Choose a hashtag and press Check.</div>
-<p class="safety">Read-only mode: this page only searches and displays posts. It does not publish comments or access your Steem account.</p>
+<div id="countBox" class="result" hidden><div class="bigcount" id="count">0</div><div id="countLabel">eligible posts found</div><p class="small" id="queueInfo"></p></div>
+<div class="notice">The search can only check posts returned by the public Steem API. This first version does not claim to have searched all historical posts.</div>
 </section>
-<section class="card" aria-labelledby="resultsTitle">
-<div class="result-head"><h2 id="resultsTitle">Found posts</h2><span id="count" class="count">No search yet</span></div>
-<div id="results"><div class="empty">Your search results will appear here.</div></div>
+<section class="card">
+<h2>3. Choose a promotional comment</h2><p class="hint">Choose one campaign message. The selected message will be used only after secure publishing is configured.</p>
+<div id="campaigns">
+<label class="campaign"><input type="radio" name="campaign" value="0" checked><span><strong>Steem Flags — Discover the game</strong><p>🎮 Looking for another game to try on Steem? Check out Steem Flags by Do2Earn — a free flag-guessing game built for the Steem community: https://steemflags.do2earn.dev<br><br>If you give it a try, feedback is always welcome!</p></span></label>
+<label class="campaign"><input type="radio" name="campaign" value="1"><span><strong>Steem Flags — Gaming community</strong><p>🎯 Enjoy games on Steem? You may like Steem Flags, a free flag-guessing game from Do2Earn: https://steemflags.do2earn.dev<br><br>Feedback from Steem gamers is welcome!</p></span></label>
+<label class="campaign"><input type="radio" name="campaign" value="2"><span><strong>Steem Flags — Quick invitation</strong><p>🕹️ Try Steem Flags by Do2Earn — a free flag-guessing game for the Steem community: https://steemflags.do2earn.dev</p></span></label>
+</div>
+<div class="actions"><button id="publishBtn" class="btn btn-primary" type="button" disabled>Publish</button></div>
+<div id="publishStatus" class="status warn">Publishing is not enabled yet: the secure backend and Posting Key secret have not been configured. No comments will be sent by this page.</div>
+<div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
 </section>
-<div class="footer">Do2Earn · Public Steem content · No login required</div>
+<div class="footer">Do2Earn · Temporary queue is stored in this browser tab only</div>
 </main>
 <script>
-const API_URL = "https://api.steemit.com";
-const tagSelect = document.getElementById("tagSelect");
-const customTag = document.getElementById("customTag");
-const checkBtn = document.getElementById("checkBtn");
-const clearBtn = document.getElementById("clearBtn");
-const statusEl = document.getElementById("status");
-const resultsEl = document.getElementById("results");
-const countEl = document.getElementById("count");
-tagSelect.addEventListener("change", () => { if(tagSelect.value !== "custom") customTag.value = ""; else customTag.focus(); });
-function safeText(v){return String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function cleanHtml(v){return String(v||"").replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim();}
-function getTags(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(t=>String(t).toLowerCase()):[]}catch{return []}}
-function formatDate(value){const d=new Date(value+"Z");return Number.isNaN(d.getTime())?value:d.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});}
-function renderPosts(posts, tag){
- if(!posts.length){resultsEl.innerHTML='<div class="empty">No posts with this hashtag were found in the recent results. Try another tag.</div>';countEl.textContent="0 posts";return;}
- resultsEl.innerHTML=posts.map(post=>{
-  const title=cleanHtml(post.title)||"(Untitled post)";
-  const body=cleanHtml(post.body);
-  const excerpt=body.length>260?body.slice(0,260)+"…":body;
-  const tags=getTags(post).slice(0,7);
-  const url="https://steemit.com/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);
-  return '<article class="post"><h3 class="post-title"><a href="'+url+'" target="_blank" rel="noopener noreferrer">'+safeText(title)+'</a></h3><div class="meta"><span>👤 @'+safeText(post.author)+'</span><span>🕒 '+safeText(formatDate(post.created))+'</span></div><div class="excerpt">'+safeText(excerpt||"No preview text available.")+'</div><div style="margin-top:9px">'+tags.map(t=>'<span class="tag">#'+safeText(t)+'</span>').join("")+'</div><div style="margin-top:11px"><a href="'+url+'" target="_blank" rel="noopener noreferrer" style="color:#8dc2ff;font-size:14px">Open post ↗</a></div></article>';
- }).join("");
- countEl.textContent=posts.length+" post"+(posts.length===1?"":"s")+" · #"+tag;
-}
+const API_URL="https://api.steemit.com";
+const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),publishBtn=document.getElementById("publishBtn");
+let candidateQueue=[],lastTag="";
+const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
+function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function tagsOf(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(x=>String(x).toLowerCase()):[]}catch{return []}}
+function setStatus(message,kind=""){statusEl.className="status "+kind;statusEl.textContent=message}
+async function rpc(method,params){const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method,params,id:1}),signal:AbortSignal.timeout(20000)});if(!res.ok)throw Error("Steem API HTTP "+res.status);const data=await res.json();if(data.error)throw Error(data.error.message||"Steem API error");return data.result}
+function hasPromoComment(replies){return (Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&promoNeedles.some(n=>String(r.body||"").toLowerCase().includes(n)))}
 async function checkPosts(){
- let tag=(customTag.value.trim() || (tagSelect.value==="custom"?"":tagSelect.value)).replace(/^#+/,"").toLowerCase();
- if(!tag){statusEl.textContent="Please choose or enter a hashtag first.";statusEl.className="status error";return;}
- if(!/^[a-z0-9-]{1,32}$/.test(tag)){statusEl.textContent="Use only English letters, numbers, and hyphens in the hashtag.";statusEl.className="status error";return;}
- checkBtn.disabled=true;checkBtn.textContent="⏳ Checking…";statusEl.className="status";statusEl.textContent="Loading recent posts for #"+tag+"…";countEl.textContent="Searching…";resultsEl.innerHTML='<div class="empty">Contacting the public Steem API…</div>';
+ const tag=(customTag.value.trim()||(tagSelect.value==="custom"?"":tagSelect.value)).replace(/^#+/,"").toLowerCase();
+ if(!tag){setStatus("Please choose or enter a hashtag first.","error");return}
+ if(!/^[a-z0-9-]{1,32}$/.test(tag)){setStatus("Use only English letters, numbers, and hyphens in the hashtag.","error");return}
+ checkBtn.disabled=true;checkBtn.textContent="⏳ Checking…";publishBtn.disabled=true;countBox.hidden=true;candidateQueue=[];lastTag=tag;setStatus("Searching recent posts tagged #"+tag+"…");
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method:"condenser_api.get_discussions_by_created",params:[{tag,limit:100}],id:1}),signal:AbortSignal.timeout(25000)});
-  if(!response.ok)throw new Error("Steem API returned HTTP "+response.status);
-  const payload=await response.json();if(payload.error)throw new Error(payload.error.message||"Steem API error");
-  const posts=Array.isArray(payload.result)?payload.result:[];
-  const filtered=posts.filter(p=>p&&p.author&&p.permlink&&getTags(p).includes(tag)).slice(0,50);
-  renderPosts(filtered,tag);
-  statusEl.className="status ok";statusEl.textContent="Done. Displaying up to 50 recent posts tagged #"+tag+".";
- }catch(error){
-  resultsEl.innerHTML='<div class="empty">Could not load posts right now. Please try again in a moment.</div>';countEl.textContent="Search failed";statusEl.className="status error";statusEl.textContent="Could not connect to the Steem API: "+(error&&error.message?error.message:"unknown error")+". If this is a browser network restriction, we can connect the page through a small server-side proxy.";
- }
- finally{checkBtn.disabled=false;checkBtn.textContent="🔎 Check posts";}
+  const posts=await rpc("condenser_api.get_discussions_by_created",[{tag,limit:100}]);
+  const matching=(Array.isArray(posts)?posts:[]).filter(p=>p&&p.author&&p.permlink&&String(p.author).toLowerCase()!=="do2earn"&&tagsOf(p).includes(tag));
+  const candidates=[];
+  // Inspect replies in small batches to avoid overwhelming the public API.
+  for(let i=0;i<matching.length;i+=3){
+   const batch=matching.slice(i,i+3);
+   const checked=await Promise.all(batch.map(async p=>{try{const replies=await rpc("condenser_api.get_content_replies",[p.author,p.permlink]);return hasPromoComment(replies)?null:{author:p.author,permlink:p.permlink,title:p.title,created:p.created}}catch{return null}}));
+   candidates.push(...checked.filter(Boolean));
+   setStatus("Checking existing promotional comments… "+Math.min(i+batch.length,matching.length)+"/"+matching.length);
+  }
+  candidateQueue=candidates.slice(0,50);
+  countBox.hidden=false;countEl.textContent=String(candidateQueue.length);countLabel.textContent="post(s) found without a recognized promotional comment from @do2earn";queueInfo.textContent="Tag: #"+tag+" · Temporary queue: "+candidateQueue.length+" post(s). The queue is kept only in memory until this page is closed or cleared.";
+  setStatus("Check complete. "+candidateQueue.length+" eligible post(s) found for #"+tag+".","ok");
+ }catch(e){candidateQueue=[];setStatus("Could not complete the search: "+(e.message||"unknown error")+". The public API may be unavailable or blocked by the browser.","error")}
+ finally{checkBtn.disabled=false;checkBtn.textContent="🔎 Check"}
 }
-checkBtn.addEventListener("click",checkPosts);
-customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
-clearBtn.addEventListener("click",()=>{resultsEl.innerHTML='<div class="empty">Your search results will appear here.</div>';countEl.textContent="No search yet";statusEl.className="status";statusEl.textContent="Results cleared. Choose a hashtag and press Check.";});
-</script>
-</body>
-</html>
+function clearQueue(){candidateQueue=[];lastTag="";countBox.hidden=true;publishBtn.disabled=true;setStatus("Temporary queue cleared. Choose a hashtag and press Check.")}
+tagSelect.addEventListener("change",()=>{if(tagSelect.value!=="custom")customTag.value="";else customTag.focus()});
+checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",clearQueue);customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
+</script></body></html>
