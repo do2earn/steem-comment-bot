@@ -89,9 +89,9 @@ function clearQueue(){candidateQueue=[];lastTag="";countBox.hidden=true;publishB
 tagSelect.addEventListener("change",()=>{if(tagSelect.value!=="custom")customTag.value="";else customTag.focus()});
 checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",clearQueue);customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
 // Fail closed: no client-side/mock login. The dashboard stays locked until a real HTTPS backend validates the Posting Key.
-let isAuthenticated=false;
+let isAuthenticated=false,authToken="";
 async function authRequest(path,options={}) {
- const response=await fetch(AUTH_API_BASE+path,{...options,credentials:"include",headers:{"Content-Type":"application/json",...(options.headers||{})},signal:AbortSignal.timeout(15000)});
+ const response=await fetch(AUTH_API_BASE+path,{...options,credentials:"include",headers:{"Content-Type":"application/json",...(authToken?{"Authorization":"Bearer "+authToken}:{}),...(options.headers||{})},signal:AbortSignal.timeout(15000)});
  const payload=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(payload.error||"Authentication request failed");
  return payload;
@@ -101,14 +101,14 @@ function showLoggedIn() {
  loginStatus.textContent="Authenticated as @do2earn. Session is protected by the server.";loginStatus.className="status ok";
 }
 function showLoggedOut(message="Enter the Posting Key for @do2earn to log in.") {
- isAuthenticated=false;candidateQueue=[];lastTag="";countBox.hidden=true;protectedDashboard.hidden=true;postingKeyInput.disabled=false;postingKeyInput.value="";loginBtn.hidden=false;loginBtn.disabled=false;logoutBtn.hidden=true;
+ isAuthenticated=false;authToken="";candidateQueue=[];lastTag="";countBox.hidden=true;protectedDashboard.hidden=true;postingKeyInput.disabled=false;postingKeyInput.value="";loginBtn.hidden=false;loginBtn.disabled=false;logoutBtn.hidden=true;
  loginStatus.textContent=message;loginStatus.className="status warn";publishBtn.disabled=true;
 }
 loginBtn.addEventListener("click",async()=>{
  const key=postingKeyInput.value;
  if(!key){loginStatus.textContent="Please enter the Posting Key.";loginStatus.className="status error";return}
  loginBtn.disabled=true;loginStatus.textContent="Verifying @do2earn Posting Key securely…";loginStatus.className="status";
- try{await authRequest("/api/login",{method:"POST",body:JSON.stringify({username:"do2earn",postingKey:key})});showLoggedIn()}
+ try{const result=await authRequest("/api/login",{method:"POST",body:JSON.stringify({username:"do2earn",postingKey:key})});authToken=result.sessionToken||"";if(!authToken)throw new Error("Login response did not include a session token.");showLoggedIn()}
  catch(e){showLoggedOut(e.message||"Login failed. Check the Posting Key and try again.")}
  finally{loginBtn.disabled=false}
 });
@@ -120,7 +120,7 @@ logoutBtn.addEventListener("click",async()=>{
 });
 async function restoreSession(){
  if(AUTH_API_BASE.includes("YOUR-SUBDOMAIN")){showLoggedOut("Secure login backend is not deployed/configured yet. Do not enter your Posting Key on this page.");loginBtn.disabled=true;return}
- try{const result=await authRequest("/api/session",{method:"GET"});if(result.authenticated)showLoggedIn();else showLoggedOut()}
+ try{const result=await authRequest("/api/session",{method:"GET"});if(result.authenticated)showLoggedIn();else showLoggedOut("For security, sign in again after refreshing this page.")}
  catch{showLoggedOut("Cannot reach the secure login service yet. The dashboard remains locked.");loginBtn.disabled=true}
 }
 restoreSession();
