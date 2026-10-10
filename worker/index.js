@@ -15,7 +15,7 @@ function json(data, status, origin) {
     headers["access-control-allow-origin"] = origin;
     headers["access-control-allow-credentials"] = "true";
     headers["access-control-allow-methods"] = "GET, POST, OPTIONS";
-    headers["access-control-allow-headers"] = "Content-Type";
+    headers["access-control-allow-headers"] = "Content-Type, Authorization";
     headers["access-control-max-age"] = "600";
   }
   return new Response(JSON.stringify(data), { status, headers });
