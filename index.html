@@ -133,10 +133,11 @@ async function publishCandidate(index,button){
  button.disabled=true;publishStatus.textContent="Signing and submitting the approved comment…";publishStatus.className="status";
  try{
   const permlink="comment-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
-  const result=await new Promise((resolve,reject)=>window.steem.broadcast.comment({
-   parent_author:post.author,parent_permlink:post.permlink,author:"do2earn",permlink,title:"",body,
-   json_metadata:JSON.stringify({app:"do2earn-steem-comment-bot/0.3.0",tags:["steemgame","gaming"]})
-  },postingKeyInMemory,(err,res)=>err?reject(err):resolve(res)));
+  const result=await new Promise((resolve,reject)=>window.steem.broadcast.comment(
+   postingKeyInMemory,post.author,post.permlink,"do2earn",permlink,"",body,
+   JSON.stringify({app:"do2earn-steem-comment-bot/0.3.0",tags:["steemgame","gaming"]}),
+   (err,res)=>err?reject(err):resolve(res)
+  ));
   lastPublishAt=Date.now();candidateQueue.splice(index,1);renderCandidates();
   publishStatus.textContent="Comment published successfully. Transaction: "+(result?.id||"confirmed by Steem RPC")+". Review the next post before publishing.";publishStatus.className="status ok";
  }catch(e){publishStatus.textContent="Publishing failed: "+(e.message||"Steem RPC error")+". The key remains only in this tab's memory.";publishStatus.className="status error";button.disabled=false}
