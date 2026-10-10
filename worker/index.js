@@ -3,7 +3,6 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.do2earn.dev"
 ]);
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
-const COOKIE_NAME = "__Host-do2earn_bot_session";
 
 function json(data, status, origin) {
   const headers = {
@@ -21,16 +20,9 @@ function json(data, status, origin) {
   }
   return new Response(JSON.stringify(data), { status, headers });
 }
-function cookie(value, maxAge) {
-  return `${COOKIE_NAME}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
-}
-function getCookie(request, name) {
-  const raw = request.headers.get("Cookie") || "";
-  for (const part of raw.split(";")) {
-    const [key, ...rest] = part.trim().split("=");
-    if (key === name) return rest.join("=");
-  }
-  return "";
+function getBearerToken(request) {
+  const value = request.headers.get("Authorization") || "";
+  return value.startsWith("Bearer ") ? value.slice(7).trim() : "";
 }
 async function sha256(value) {
   const bytes = new TextEncoder().encode(value);
@@ -44,11 +36,11 @@ function constantTimeEqual(a, b) {
   return mismatch === 0;
 }
 async function revokeSession(request, env) {
-  const token = getCookie(request, COOKIE_NAME);
+  const token = getBearerToken(request);
   if (token) await env.DB.prepare("DELETE FROM bot_sessions WHERE token_hash = ?").bind(await sha256(token)).run();
 }
 async function authenticated(request, env) {
-  const token = getCookie(request, COOKIE_NAME);
+  const token = getBearerToken(request);
   if (!token) return false;
   const tokenHash = await sha256(token);
   const row = await env.DB.prepare(
@@ -97,7 +89,7 @@ export default {
       await env.DB.prepare("DELETE FROM bot_sessions WHERE expires_at <= ?").bind(now).run();
       await env.DB.prepare("INSERT INTO bot_sessions (token_hash, expires_at, created_at) VALUES (?, ?, ?)")
         .bind(tokenHash, now + SESSION_TTL_SECONDS, now).run();
-      return new Response(JSON.stringify({ authenticated: true, username: "@do2earn" }), {
+      return new Response(JSON.stringify({ authenticated: true, username: "@do2earn", sessionToken: token }), {
         status: 200,
         headers: {
           "content-type": "application/json; charset=utf-8",
@@ -105,8 +97,7 @@ export default {
           "x-content-type-options": "nosniff",
           "access-control-allow-origin": origin,
           "access-control-allow-credentials": "true",
-          "vary": "Origin",
-          "set-cookie": cookie(token, SESSION_TTL_SECONDS)
+          "vary": "Origin"
         }
       });
     }
@@ -125,8 +116,7 @@ export default {
           "cache-control": "no-store",
           "access-control-allow-origin": origin,
           "access-control-allow-credentials": "true",
-          "vary": "Origin",
-          "set-cookie": cookie("", 0)
+          "vary": "Origin"
         }
       });
     }
