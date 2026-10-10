@@ -50,18 +50,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Configure Posting Key as Worker Secret
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          STEEM_POSTING_KEY: ${{ secrets.STEEM_POSTING_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${STEEM_POSTING_KEY:-}" ]; then
-            echo "Missing STEEM_POSTING_KEY repository secret."
-            exit 1
-          fi
-          printf '%s' "$STEEM_POSTING_KEY" | wrangler secret put STEEM_POSTING_KEY
       - name: Deploy Worker
         run: wrangler deploy
         env:
