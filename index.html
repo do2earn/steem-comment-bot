@@ -24,6 +24,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <section class="card" id="loginCard">
 <h2 id="loginHeading">🔐 Secure login</h2><p class="hint" id="loginHint">This bot is exclusively for the Steem account @do2earn. The username is fixed and cannot be changed.</p>
 <div class="field" id="usernameField"><label for="username">Steem username</label><input id="username" value="@do2earn" autocomplete="username" readonly aria-readonly="true"></div>
+<div id="accountLoggedIn" hidden style="font-size:20px;font-weight:800;margin:4px 0 12px;color:var(--accent)">@do2earn</div>
 <div class="field" id="postingKeyField" style="margin-top:10px"><label for="postingKey">Posting Key</label><input id="postingKey" type="password" placeholder="Enter @do2earn Posting Key" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="loginStatus"></div>
 <div class="actions"><button id="loginBtn" class="btn btn-primary" type="button">🔒 Login</button><button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Logout</button></div>
 <div id="loginStatus" class="status warn" role="status" aria-live="polite">Enter the Posting Key for @do2earn. The key will be checked in this browser and kept only in memory while this tab remains open.</div>
@@ -97,12 +98,11 @@ checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",
 // The private key remains in this tab's JavaScript memory only and is never sent to the RPC endpoint.
 function showLoggedIn() {
  isAuthenticated=true;protectedDashboard.hidden=false;postingKeyInput.value="";postingKeyInput.disabled=true;loginBtn.hidden=true;logoutBtn.hidden=false;
- loginHeading.hidden=true;loginHint.hidden=true;postingKeyField.hidden=true;loginSecurityNote.hidden=true;usernameField.hidden=false;document.getElementById("username").parentElement.querySelector("label").hidden=true;
- loginStatus.textContent="Authenticated as @do2earn. Posting Key is held in memory in this tab only.";loginStatus.className="status ok";
+ loginHeading.hidden=true;loginHint.hidden=true;postingKeyField.hidden=true;loginSecurityNote.hidden=true;usernameField.hidden=true;document.getElementById("accountLoggedIn").hidden=false;loginStatus.hidden=true;
 }
 function showLoggedOut(message="Enter the Posting Key for @do2earn to log in.") {
  isAuthenticated=false;postingKeyInMemory="";candidateQueue=[];lastTag="";candidateList.replaceChildren();countBox.hidden=true;protectedDashboard.hidden=true;postingKeyInput.disabled=false;postingKeyInput.value="";loginBtn.hidden=false;loginBtn.disabled=false;logoutBtn.hidden=true;
- loginHeading.hidden=false;loginHint.hidden=false;postingKeyField.hidden=false;loginSecurityNote.hidden=false;usernameField.hidden=false;document.getElementById("username").parentElement.querySelector("label").hidden=false;
+ loginHeading.hidden=false;loginHint.hidden=false;postingKeyField.hidden=false;loginSecurityNote.hidden=false;usernameField.hidden=false;document.getElementById("accountLoggedIn").hidden=true;loginStatus.hidden=false;
  loginStatus.textContent=message;loginStatus.className="status warn";publishStatus.textContent="Log in to review and publish comments.";publishStatus.className="status warn";
 }
 loginBtn.addEventListener("click",async()=>{
