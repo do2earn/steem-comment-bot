@@ -1,0 +1,13 @@
+name = "steem-comment-bot-api"
+main = "worker/index.js"
+compatibility_date = "2026-10-10"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "steem-comment-bot-sessions"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "worker/migrations"
+
+[vars]
+# Do not add secrets here. STEEM_POSTING_KEY must be set as a Cloudflare Worker Secret.
