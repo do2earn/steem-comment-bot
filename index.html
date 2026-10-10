@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14243b">
+<title>Steem Comment Bot | Post Finder</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1728;--panel:#14243b;--panel2:#1a2d48;--line:#304765;--text:#eef5ff;--muted:#a9bad0;--accent:#65e6a6;--blue:#7bb8ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101f35,#0a1322 70%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+main{width:min(900px,100%);margin:auto;padding:22px 15px 50px}.brand{display:flex;gap:12px;align-items:center;margin:8px 0 22px}.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#203b5b;font-size:25px}.brand h1{font-size:clamp(21px,5vw,30px);line-height:1.2;margin:0}.brand p{color:var(--muted);margin:4px 0 0;font-size:14px}
+.card{background:rgba(20,36,59,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px #0002}.card h2{font-size:19px;margin:0 0 7px}.hint{color:var(--muted);font-size:14px;margin:0 0 15px}
+.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.field label{display:block;font-size:14px;color:#d7e5f7;margin-bottom:6px}.field select,.field input{width:100%;min-height:48px;border:1px solid #47617f;border-radius:11px;background:#0d1b2e;color:var(--text);padding:10px 12px;font:inherit}
+.actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.6;cursor:wait}
+.status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}
+.result-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.result-head h2{margin:0}.count{color:var(--accent);font-size:14px;white-space:nowrap}
+.post{border:1px solid var(--line);border-radius:14px;background:#102038;padding:14px;margin-top:10px}.post-title{font-weight:750;font-size:17px;line-height:1.35;margin:0 0 7px}.post-title a{color:#eaf4ff;text-decoration:none}.post-title a:hover{color:var(--blue);text-decoration:underline}.meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 12px;margin-bottom:8px}.excerpt{color:#d1dcec;font-size:14px;overflow-wrap:anywhere}.tag{display:inline-block;background:#244363;color:#bfe0ff;border-radius:6px;padding:2px 7px;font-size:12px;margin:2px 3px 0 0}.empty{color:var(--muted);text-align:center;padding:25px 10px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
+@media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.controls{grid-template-columns:1fr}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}.post{padding:12px}.result-head{align-items:flex-start;flex-direction:column;gap:3px}}
+</style>
+</head>
+<body>
+<main>
+<header class="brand"><div class="logo" aria-hidden="true">🔎</div><div><h1>Steem Comment Bot</h1><p>Find recent public posts by hashtag</p></div></header>
+<section class="card">
+<h2>Choose a hashtag</h2>
+<p class="hint">Select a tag or type another one, then press Check to load recent posts from Steem.</p>
+<div class="controls">
+<div class="field"><label for="tagSelect">Popular hashtags</label><select id="tagSelect"><option value="steemgame">#steemgame</option><option value="gaming">#gaming</option><option value="gameplay">#gameplay</option><option value="play2earn">#play2earn</option><option value="steem">#steem</option><option value="crypto">#crypto</option><option value="introduceyourself">#introduceyourself</option><option value="custom">Other hashtag…</option></select></div>
+<div class="field"><label for="customTag">Or enter a hashtag</label><input id="customTag" type="text" placeholder="e.g. steemgame" autocomplete="off" maxlength="32"></div>
+</div>
+<div class="actions"><button id="checkBtn" class="btn btn-primary" type="button">🔎 Check posts</button><button id="clearBtn" class="btn btn-secondary" type="button">Clear results</button></div>
+<div id="status" class="status" role="status" aria-live="polite">Ready. Choose a hashtag and press Check.</div>
+<p class="safety">Read-only mode: this page only searches and displays posts. It does not publish comments or access your Steem account.</p>
+</section>
+<section class="card" aria-labelledby="resultsTitle">
+<div class="result-head"><h2 id="resultsTitle">Found posts</h2><span id="count" class="count">No search yet</span></div>
+<div id="results"><div class="empty">Your search results will appear here.</div></div>
+</section>
+<div class="footer">Do2Earn · Public Steem content · No login required</div>
+</main>
+<script>
+const API_URL = "https://api.steemit.com";
+const tagSelect = document.getElementById("tagSelect");
+const customTag = document.getElementById("customTag");
+const checkBtn = document.getElementById("checkBtn");
+const clearBtn = document.getElementById("clearBtn");
+const statusEl = document.getElementById("status");
+const resultsEl = document.getElementById("results");
+const countEl = document.getElementById("count");
+tagSelect.addEventListener("change", () => { if(tagSelect.value !== "custom") customTag.value = ""; else customTag.focus(); });
+function safeText(v){return String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function cleanHtml(v){return String(v||"").replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim();}
+function getTags(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(t=>String(t).toLowerCase()):[]}catch{return []}}
+function formatDate(value){const d=new Date(value+"Z");return Number.isNaN(d.getTime())?value:d.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});}
+function renderPosts(posts, tag){
+ if(!posts.length){resultsEl.innerHTML='<div class="empty">No posts with this hashtag were found in the recent results. Try another tag.</div>';countEl.textContent="0 posts";return;}
+ resultsEl.innerHTML=posts.map(post=>{
+  const title=cleanHtml(post.title)||"(Untitled post)";
+  const body=cleanHtml(post.body);
+  const excerpt=body.length>260?body.slice(0,260)+"…":body;
+  const tags=getTags(post).slice(0,7);
+  const url="https://steemit.com/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);
+  return '<article class="post"><h3 class="post-title"><a href="'+url+'" target="_blank" rel="noopener noreferrer">'+safeText(title)+'</a></h3><div class="meta"><span>👤 @'+safeText(post.author)+'</span><span>🕒 '+safeText(formatDate(post.created))+'</span></div><div class="excerpt">'+safeText(excerpt||"No preview text available.")+'</div><div style="margin-top:9px">'+tags.map(t=>'<span class="tag">#'+safeText(t)+'</span>').join("")+'</div><div style="margin-top:11px"><a href="'+url+'" target="_blank" rel="noopener noreferrer" style="color:#8dc2ff;font-size:14px">Open post ↗</a></div></article>';
+ }).join("");
+ countEl.textContent=posts.length+" post"+(posts.length===1?"":"s")+" · #"+tag;
+}
+async function checkPosts(){
+ let tag=(customTag.value.trim() || (tagSelect.value==="custom"?"":tagSelect.value)).replace(/^#+/,"").toLowerCase();
+ if(!tag){statusEl.textContent="Please choose or enter a hashtag first.";statusEl.className="status error";return;}
+ if(!/^[a-z0-9-]{1,32}$/.test(tag)){statusEl.textContent="Use only English letters, numbers, and hyphens in the hashtag.";statusEl.className="status error";return;}
+ checkBtn.disabled=true;checkBtn.textContent="⏳ Checking…";statusEl.className="status";statusEl.textContent="Loading recent posts for #"+tag+"…";countEl.textContent="Searching…";resultsEl.innerHTML='<div class="empty">Contacting the public Steem API…</div>';
+ try{
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method:"condenser_api.get_discussions_by_created",params:[{tag,limit:100}],id:1}),signal:AbortSignal.timeout(25000)});
+  if(!response.ok)throw new Error("Steem API returned HTTP "+response.status);
+  const payload=await response.json();if(payload.error)throw new Error(payload.error.message||"Steem API error");
+  const posts=Array.isArray(payload.result)?payload.result:[];
+  const filtered=posts.filter(p=>p&&p.author&&p.permlink&&getTags(p).includes(tag)).slice(0,50);
+  renderPosts(filtered,tag);
+  statusEl.className="status ok";statusEl.textContent="Done. Displaying up to 50 recent posts tagged #"+tag+".";
+ }catch(error){
+  resultsEl.innerHTML='<div class="empty">Could not load posts right now. Please try again in a moment.</div>';countEl.textContent="Search failed";statusEl.className="status error";statusEl.textContent="Could not connect to the Steem API: "+(error&&error.message?error.message:"unknown error")+". If this is a browser network restriction, we can connect the page through a small server-side proxy.";
+ }
+ finally{checkBtn.disabled=false;checkBtn.textContent="🔎 Check posts";}
+}
+checkBtn.addEventListener("click",checkPosts);
+customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
+clearBtn.addEventListener("click",()=>{resultsEl.innerHTML='<div class="empty">Your search results will appear here.</div>';countEl.textContent="No search yet";statusEl.className="status";statusEl.textContent="Results cleared. Choose a hashtag and press Check.";});
+</script>
+</body>
+</html>
