@@ -10,7 +10,7 @@ The first version is **dry-run only**. It does not publish comments, does not re
 
 - `DRY_RUN=true` by default; publishing is not implemented in this starter.
 - No private keys or account credentials are needed.
-- A daily candidate cap and duplicate-post tracking reduce repeated targeting.
+- A per-run candidate cap limits the number of suggestions shown.
 - Review each candidate and follow the community's rules; do not post unsolicited or repetitive promotions.
 
 ## Run locally
