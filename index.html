@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#14243b">
 <title>Steem Comment Bot | Do2Earn</title>
 <script src="https://cdn.jsdelivr.net/npm/steem@0.7.11/dist/steem.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 <style>
 :root{color-scheme:dark;--bg:#0c1728;--panel:#14243b;--line:#304765;--text:#eef5ff;--muted:#a9bad0;--accent:#65e6a6;--blue:#7bb8ff;--warn:#ffd27d}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101f35,#0a1322 70%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
@@ -16,6 +18,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 .status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}.status.warn{color:var(--warn)}
 .result{border:1px solid var(--line);border-radius:14px;background:#102038;padding:16px;margin-top:12px}.bigcount{font-size:clamp(25px,6vw,38px);font-weight:800;color:var(--accent);line-height:1.2}.small{color:var(--muted);font-size:13px}.campaign{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:9px;background:#102038}.campaign input{margin-top:5px;accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto}.campaign strong{display:block}.campaign p{margin:5px 0 0;color:var(--muted);font-size:13px}.progress-wrap{margin-top:16px;display:none}.progress-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:7px}.progress{height:12px;border-radius:99px;background:#091322;overflow:hidden;border:1px solid #304765}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}.notice{border-left:3px solid var(--warn);padding:10px 12px;background:#2b2a25;border-radius:7px;color:#f5e6c5;font-size:13px;margin-top:12px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
 .candidate-list{display:grid;gap:10px;margin-top:14px}.candidate{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}.candidate p{margin:0}.candidate a{color:var(--blue);overflow-wrap:anywhere}.candidate .btn{justify-self:start}.candidate strong{overflow-wrap:anywhere}
+.modal-backdrop{position:fixed;inset:0;z-index:1000;background:#050b14eF;display:flex;align-items:center;justify-content:center;padding:12px}.modal-backdrop[hidden]{display:none}.preview-dialog{width:min(900px,100%);max-height:94vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 70px #0009;overflow:hidden}.preview-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.preview-head h2{margin:0;font-size:18px}.preview-body{overflow:auto;padding:16px;background:#fff;color:#20242a;min-height:180px}.preview-content{font:16px/1.55 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}.preview-content img{max-width:100%;height:auto}.preview-content a{color:#075bc8}.preview-content hr{border:0;border-top:1px solid #bbb;margin:1.2em 0}.preview-content pre{white-space:pre-wrap;overflow-wrap:anywhere}.preview-content table{border-collapse:collapse;max-width:100%}.preview-content td,.preview-content th{border:1px solid #bbb;padding:5px}.preview-actions{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}.preview-actions .btn{flex:1}
 @media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}.candidate .btn{width:100%}}
 </style>
 </head>
@@ -55,6 +58,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="notice">Anti-spam safeguards: up to 20 eligible posts per scan, one comment per post, an explicit confirmation before the batch starts, and at least 60 seconds between publishing attempts. You can cancel the batch between attempts.</div>
 </section>
 </div>
+<div id="previewModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="previewTitle"><div class="preview-dialog"><div class="preview-head"><h2 id="previewTitle">👁️ Promotional Comment Preview</h2><button id="closePreviewBtn" class="btn btn-secondary" type="button" style="min-height:40px;padding:7px 12px">Close ✕</button></div><div id="previewBody" class="preview-body"><div class="preview-content"></div></div><div class="preview-actions"><button id="editPreviewBtn" class="btn btn-secondary" type="button">Back to Edit</button><button id="continuePublishBtn" class="btn btn-primary" type="button">Continue to Publish</button></div></div></div>
 <div class="footer">Do2Earn · This bot is restricted to @do2earn</div>
 </main>
 <script>
@@ -62,7 +66,7 @@ const API_URL="https://api.steemit.com";
 const loginHeading=document.getElementById("loginHeading"),loginHint=document.getElementById("loginHint"),usernameField=document.getElementById("usernameField"),postingKeyField=document.getElementById("postingKeyField"),loginSecurityNote=document.getElementById("loginSecurityNote");
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus"),campaignSelect=document.getElementById("campaignSelect"),commentEditor=document.getElementById("commentEditor"),previewPublishBtn=document.getElementById("previewPublishBtn"),cancelPublishBtn=document.getElementById("cancelPublishBtn"),progressWrap=document.getElementById("progressWrap"),progressLabel=document.getElementById("progressLabel"),progressPct=document.getElementById("progressPct"),progressBar=document.getElementById("progressBar"),progressDetail=document.getElementById("progressDetail");
-let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0,successfulPosts=[];
+let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0,successfulPosts=[],previewApproved=false;
 const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
 function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function tagsOf(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(x=>String(x).toLowerCase()):[]}catch{return []}}
@@ -126,6 +130,7 @@ logoutBtn.addEventListener("click",()=>showLoggedOut("Logged out. The key was cl
 let isAuthenticated=false;
 let batchRunning=false,stopRequested=false,loadedTemplatePath="";
 const MIN_PUBLISH_INTERVAL=60000;
+const previewModal=document.getElementById("previewModal"),previewBody=document.getElementById("previewBody"),closePreviewBtn=document.getElementById("closePreviewBtn"),editPreviewBtn=document.getElementById("editPreviewBtn"),continuePublishBtn=document.getElementById("continuePublishBtn");
 async function loadSelectedTemplate(){
  const path=campaignSelect.value;campaignSelect.disabled=true;
  publishStatus.textContent="Loading saved HTML comment…";publishStatus.className="status";
@@ -172,8 +177,15 @@ async function previewAndPublish(){
  if(!body){publishStatus.textContent="The comment editor is empty.";publishStatus.className="status error";return}
  if(!loadedTemplatePath){publishStatus.textContent="Select and load a saved HTML comment first.";publishStatus.className="status error";return}
  if(body.length>10000){publishStatus.textContent="The comment is too long. Please shorten it.";publishStatus.className="status error";return}
+ if(!previewApproved){
+  if(!window.marked||!window.DOMPurify){publishStatus.textContent="Preview libraries did not load. Please refresh the page and try again.";publishStatus.className="status error";return}
+  const rendered=window.marked.parse(body,{breaks:true,gfm:true});
+  previewBody.innerHTML='<div class="preview-content">' + window.DOMPurify.sanitize(rendered,{USE_PROFILES:{html:true}}) + '</div>';
+  previewModal.hidden=false;document.body.style.overflow="hidden";return;
+ }
+ previewApproved=false;
  const targets=candidateQueue.slice();
- const accepted=confirm("PREVIEW & PUBLISH\n\nAccount: @do2earn\nHashtag: #"+lastTag+"\nEligible posts: "+targets.length+"\nMinimum delay: 60 seconds between publishing attempts\n\nCOMMENT PREVIEW:\n\n"+body+"\n\nThe bot will publish this comment to each listed post, one at a time. Only proceed if it is relevant to those posts and complies with Steem/community rules.");
+ const accepted=confirm("PUBLISH PROMOTIONAL COMMENT\n\nAccount: @do2earn\nHashtag: #"+lastTag+"\nEligible posts: "+targets.length+"\nMinimum delay: 60 seconds between publishing attempts\n\nYou have reviewed the rendered HTML preview. The bot will publish this comment to each listed post, one at a time. Only proceed if it is relevant to those posts and complies with Steem/community rules.");
  if(!accepted)return;
  batchRunning=true;stopRequested=false;previewPublishBtn.disabled=true;campaignSelect.disabled=true;commentEditor.disabled=true;checkBtn.disabled=true;clearBtn.disabled=true;cancelPublishBtn.hidden=false;cancelPublishBtn.disabled=false;
  let success=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
@@ -212,6 +224,11 @@ async function previewAndPublish(){
   renderCandidates();
  }
 }
+function closePreview(){previewModal.hidden=true;document.body.style.overflow="";previewApproved=false}
+closePreviewBtn.addEventListener("click",closePreview);
+editPreviewBtn.addEventListener("click",closePreview);
+previewModal.addEventListener("click",e=>{if(e.target===previewModal)closePreview()});
+continuePublishBtn.addEventListener("click",()=>{if(!isAuthenticated||!postingKeyInMemory){closePreview();showLoggedOut("Session expired. Enter the Posting Key again.");return}previewApproved=true;closePreview();previewApproved=true;previewAndPublish()});
 previewPublishBtn.addEventListener("click",previewAndPublish);
 cancelPublishBtn.addEventListener("click",()=>{if(batchRunning){stopRequested=true;cancelPublishBtn.disabled=true;publishStatus.textContent="Cancellation requested; waiting for the current operation to finish.";publishStatus.className="status warn"}});
 loadSelectedTemplate();
