@@ -2,6 +2,12 @@
 
 A cautious, campaign-based helper for discovering relevant public Steem posts and preparing promotional comments for Do2Earn projects.
 
+## Web dashboard
+
+A mobile-friendly hashtag search page is available at https://do2earn.dev/steem-comment-bot/. Choose a hashtag (or type your own) and press **Check posts** to view recent public Steem posts. The dashboard is read-only and does not publish comments.
+
+The source page is also stored in `index.html` in this repository.
+
 ## Current status
 
 The first version is **dry-run only**. It does not publish comments, does not require a private key, and does not perform any account actions. It fetches recent posts from the public Steem API, filters for relevant `steemgame` content, and prints candidate posts plus a suggested campaign message.
