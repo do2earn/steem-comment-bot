@@ -1,12 +1,11 @@
 {
   "name": "do2earn-steem-comment-bot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Do2Earn Steem Comment Bot with dry-run discovery and a separate secure login API",
+  "description": "Browser-only Steem comment tool for @do2earn with dry-run GitHub Actions discovery",
   "type": "module",
   "scripts": {
-    "start": "node src/main.js",
-    "check:worker": "node --check worker/index.js"
+    "start": "node src/main.js"
   },
   "engines": {
     "node": ">=20"
