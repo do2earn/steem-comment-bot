@@ -143,7 +143,7 @@ function renderCandidates(){
   const card=document.createElement("div");card.className="candidate";
   const title=document.createElement("strong");title.textContent=(index+1)+". "+(post.title||"(Untitled post)");
   const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+post.created+" · #"+lastTag;
-  const link=document.createElement("a");link.href="https://steemit.com/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open post";
+  const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open post";
   card.append(title,meta,link);candidateList.append(card);
  });
 }
