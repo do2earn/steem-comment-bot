@@ -53,6 +53,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 </main>
 <script>
 const API_URL="https://api.steemit.com";
+const AUTH_API_BASE="https://steem-comment-bot-api.YOUR-SUBDOMAIN.workers.dev";
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),publishBtn=document.getElementById("publishBtn");
 let candidateQueue=[],lastTag="";
@@ -88,6 +89,39 @@ function clearQueue(){candidateQueue=[];lastTag="";countBox.hidden=true;publishB
 tagSelect.addEventListener("change",()=>{if(tagSelect.value!=="custom")customTag.value="";else customTag.focus()});
 checkBtn.addEventListener("click",checkPosts);clearBtn.addEventListener("click",clearQueue);customTag.addEventListener("keydown",e=>{if(e.key==="Enter")checkPosts()});
 // Fail closed: no client-side/mock login. The dashboard stays locked until a real HTTPS backend validates the Posting Key.
-loginBtn.addEventListener("click",()=>{loginStatus.textContent="Login is unavailable until secure server-side authentication is deployed. Your key has not been sent or saved.";loginStatus.className="status warn";postingKeyInput.value=""});
-logoutBtn.addEventListener("click",()=>{candidateQueue=[];lastTag="";protectedDashboard.hidden=true;countBox.hidden=true;postingKeyInput.value="";loginStatus.textContent="Logged out. The dashboard is locked; no browser session was created.";loginStatus.className="status warn";logoutBtn.hidden=true;loginBtn.hidden=false;loginBtn.disabled=true});
+let isAuthenticated=false;
+async function authRequest(path,options={}) {
+ const response=await fetch(AUTH_API_BASE+path,{...options,credentials:"include",headers:{"Content-Type":"application/json",...(options.headers||{})},signal:AbortSignal.timeout(15000)});
+ const payload=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(payload.error||"Authentication request failed");
+ return payload;
+}
+function showLoggedIn() {
+ isAuthenticated=true;protectedDashboard.hidden=false;postingKeyInput.value="";postingKeyInput.disabled=true;loginBtn.hidden=true;logoutBtn.hidden=false;
+ loginStatus.textContent="Authenticated as @do2earn. Session is protected by the server.";loginStatus.className="status ok";
+}
+function showLoggedOut(message="Enter the Posting Key for @do2earn to log in.") {
+ isAuthenticated=false;candidateQueue=[];lastTag="";countBox.hidden=true;protectedDashboard.hidden=true;postingKeyInput.disabled=false;postingKeyInput.value="";loginBtn.hidden=false;loginBtn.disabled=false;logoutBtn.hidden=true;
+ loginStatus.textContent=message;loginStatus.className="status warn";publishBtn.disabled=true;
+}
+loginBtn.addEventListener("click",async()=>{
+ const key=postingKeyInput.value;
+ if(!key){loginStatus.textContent="Please enter the Posting Key.";loginStatus.className="status error";return}
+ loginBtn.disabled=true;loginStatus.textContent="Verifying @do2earn Posting Key securely…";loginStatus.className="status";
+ try{await authRequest("/api/login",{method:"POST",body:JSON.stringify({username:"do2earn",postingKey:key})});showLoggedIn()}
+ catch(e){showLoggedOut(e.message||"Login failed. Check the Posting Key and try again.")}
+ finally{loginBtn.disabled=false}
+});
+logoutBtn.addEventListener("click",async()=>{
+ logoutBtn.disabled=true;
+ try{await authRequest("/api/logout",{method:"POST",body:"{}"});showLoggedOut("Logged out successfully. The server session was revoked and the temporary queue was cleared.")}
+ catch(e){showLoggedOut("Logged out locally. Server revocation could not be confirmed; close this tab if the connection is unavailable.")}
+ finally{logoutBtn.disabled=false}
+});
+async function restoreSession(){
+ if(AUTH_API_BASE.includes("YOUR-SUBDOMAIN")){showLoggedOut("Secure login backend is not deployed/configured yet. Do not enter your Posting Key on this page.");loginBtn.disabled=true;return}
+ try{const result=await authRequest("/api/session",{method:"GET"});if(result.authenticated)showLoggedIn();else showLoggedOut()}
+ catch{showLoggedOut("Cannot reach the secure login service yet. The dashboard remains locked.");loginBtn.disabled=true}
+}
+restoreSession();
 </script></body></html>
