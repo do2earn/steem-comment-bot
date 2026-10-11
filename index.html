@@ -192,7 +192,7 @@ function formatElapsed(ms){
 function updateProgress(done,total,success,skipped,failed,detail,unconfirmed=0){
  const pct=total?Math.round(done/total*100):0;
  progressWrap.style.display="block";progressLabel.textContent=done+" of "+total+" processed";progressPct.textContent=pct+"%";progressBar.style.width=pct+"%";
- progressDetail.textContent="Published (verified): "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Elapsed: "+formatElapsed(performance.now()-batchStartedAt)+(detail?" · "+detail:"");
+ progressDetail.textContent="API: "+API_URL+" · Published (verified): "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Elapsed: "+formatElapsed(performance.now()-batchStartedAt)+(detail?" · "+detail:"");
 }
 function waitMs(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 async function verifyPublishedComment(post,commentPermlink){
@@ -238,7 +238,7 @@ async function previewAndPublish(){
  try{
   publishStatus.textContent="Selecting Steem API…";publishStatus.className="status";
   API_URL=await selectFastestApi();
-  publishStatus.textContent="Selected Steem API: "+API_URL;publishStatus.className="status ok";
+  publishStatus.textContent="Selected Steem API: "+API_URL;publishStatus.className="status ok";progressDetail.textContent="Selected Steem API: "+API_URL;
   for(let i=0;i<targets.length;i++){
    if(stopRequested)break;
    const post=targets[i];
@@ -278,7 +278,7 @@ async function previewAndPublish(){
   const elapsedText=formatElapsed(performance.now()-batchStartedAt);
   if(stopRequested){publishStatus.textContent="Batch cancelled. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+" · Total duration: "+elapsedText+".";publishStatus.className="status warn"}
   else{publishStatus.textContent="Batch finished. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText+".";publishStatus.className=(failed||unconfirmed)?"status warn":"status ok"}
-  progressDetail.textContent="Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText;
+  progressDetail.textContent="Selected Steem API: "+API_URL+" · Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText;
   if(successfulPosts.length){const box=document.getElementById("publishedResults"),list=document.getElementById("publishedList");list.replaceChildren();successfulPosts.forEach((post,index)=>{const row=document.createElement("div");row.className="candidate";const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent=(index+1)+". "+post.title;link.style.color="var(--blue)";link.style.fontWeight="700";row.append(link);const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author;row.append(meta);list.append(row)});box.hidden=false;}
   candidateQueue=candidateQueue.filter(p=>!completedIds.has(p.author+"/"+p.permlink));
   countEl.textContent=String(candidateQueue.length);countLabel.textContent="remaining eligible post(s) in the temporary queue";queueInfo.textContent="Tag: #"+lastTag+" · Remaining queue: "+candidateQueue.length+" post(s).";
