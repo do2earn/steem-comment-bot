@@ -62,7 +62,8 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="footer">Do2Earn · This bot is restricted to @do2earn</div>
 </main>
 <script>
-const API_URL="https://api.steemit.com";
+let API_URL="https://api.steemit.com";
+const API_CANDIDATES=["https://api.steemit.com","https://api.steem.fans","https://api.justyy.com"];
 const loginHeading=document.getElementById("loginHeading"),loginHint=document.getElementById("loginHint"),usernameField=document.getElementById("usernameField"),postingKeyField=document.getElementById("postingKeyField"),loginSecurityNote=document.getElementById("loginSecurityNote");
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus"),campaignSelect=document.getElementById("campaignSelect"),commentEditor=document.getElementById("commentEditor"),previewPublishBtn=document.getElementById("previewPublishBtn"),cancelPublishBtn=document.getElementById("cancelPublishBtn"),progressWrap=document.getElementById("progressWrap"),progressLabel=document.getElementById("progressLabel"),progressPct=document.getElementById("progressPct"),progressBar=document.getElementById("progressBar"),progressDetail=document.getElementById("progressDetail");
@@ -86,6 +87,20 @@ function formatRelativeTime(created){
 }
 function setStatus(message,kind=""){statusEl.className="status "+kind;statusEl.textContent=message}
 async function rpc(method,params){const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method,params,id:1}),signal:AbortSignal.timeout(20000)});if(!res.ok)throw Error("Steem API HTTP "+res.status);const data=await res.json();if(data.error)throw Error(data.error.message||"Steem API error");return data.result}
+async function selectFastestApi(){
+ const checks=await Promise.all(API_CANDIDATES.map(async url=>{
+  const started=performance.now();
+  try{
+   const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method:"condenser_api.get_dynamic_global_properties",params:[],id:1}),signal:AbortSignal.timeout(5000)});
+   if(!response.ok)return null;
+   const data=await response.json();
+   if(data.error||!data.result||typeof data.result.head_block_number!=="number")return null;
+   return {url,elapsed:performance.now()-started};
+  }catch{return null}
+ }));
+ const healthy=checks.filter(Boolean).sort((a,b)=>a.elapsed-b.elapsed);
+ return healthy.length?healthy[0].url:API_URL;
+}
 function hasPromoComment(replies){return (Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&promoNeedles.some(n=>String(r.body||"").toLowerCase().includes(n)))}
 async function checkPosts(){
  const tag=(customTag.value.trim()||(tagSelect.value==="custom"?"":tagSelect.value)).replace(/^#+/,"").toLowerCase();
@@ -221,6 +236,9 @@ async function previewAndPublish(){
  let success=0,unconfirmed=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
  progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch",unconfirmed);
  try{
+  publishStatus.textContent="Selecting Steem API…";publishStatus.className="status";
+  API_URL=await selectFastestApi();
+  publishStatus.textContent="Selected Steem API: "+API_URL;publishStatus.className="status ok";
   for(let i=0;i<targets.length;i++){
    if(stopRequested)break;
    const post=targets[i];
