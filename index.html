@@ -142,7 +142,7 @@ loginBtn.addEventListener("click",async()=>{
 });
 logoutBtn.addEventListener("click",()=>showLoggedOut("Logged out. The key was cleared from this page's memory."));
 let isAuthenticated=false;
-let batchRunning=false,stopRequested=false,loadedTemplatePath="";
+let batchRunning=false,stopRequested=false,loadedTemplatePath="",batchStartedAt=0;
 const MIN_PUBLISH_INTERVAL=60000;
 const previewModal=document.getElementById("previewModal"),previewBody=document.getElementById("previewBody"),closePreviewBtn=document.getElementById("closePreviewBtn"),editPreviewBtn=document.getElementById("editPreviewBtn"),continuePublishBtn=document.getElementById("continuePublishBtn");
 async function loadSelectedTemplate(){
@@ -169,18 +169,34 @@ function renderCandidates(){
   card.append(title,meta);candidateList.append(card);
  });
 }
-function updateProgress(done,total,success,skipped,failed,detail){
+function formatElapsed(ms){
+ const totalSeconds=Math.max(0,Math.floor(ms/1000));
+ const hours=Math.floor(totalSeconds/3600),minutes=Math.floor((totalSeconds%3600)/60),seconds=totalSeconds%60;
+ return [hours,minutes,seconds].map(n=>String(n).padStart(2,"0")).join(":");
+}
+function updateProgress(done,total,success,skipped,failed,detail,unconfirmed=0){
  const pct=total?Math.round(done/total*100):0;
  progressWrap.style.display="block";progressLabel.textContent=done+" of "+total+" processed";progressPct.textContent=pct+"%";progressBar.style.width=pct+"%";
- progressDetail.textContent="Published: "+success+" · Skipped: "+skipped+" · Failed: "+failed+(detail?" · "+detail:"");
+ progressDetail.textContent="Published (verified): "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Elapsed: "+formatElapsed(performance.now()-batchStartedAt)+(detail?" · "+detail:"");
 }
 function waitMs(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+async function verifyPublishedComment(post,commentPermlink){
+ // The broadcast callback alone is not treated as proof that the comment is visible on-chain.
+ for(let attempt=0;attempt<4;attempt++){
+  try{
+   const replies=await rpc("condenser_api.get_content_replies",[post.author,post.permlink]);
+   if((Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&r.permlink===commentPermlink))return true;
+  }catch(e){/* Retry transient public-RPC errors before marking the result unconfirmed. */}
+  if(attempt<3)await waitMs(2000);
+ }
+ return false;
+}
 async function publishBodyTo(post,body){
  return new Promise((resolve,reject)=>{
   const permlink="comment-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
   window.steem.broadcast.comment(postingKeyInMemory,post.author,post.permlink,"do2earn",permlink,"",body,
    JSON.stringify({app:"do2earn-steem-comment-bot/0.4.0",tags:[lastTag||"steem"]}),
-   (err,result)=>err?reject(err):resolve(result));
+   (err,result)=>err?reject(err):resolve({result,permlink}));
  });
 }
 async function previewAndPublish(){
@@ -201,9 +217,9 @@ async function previewAndPublish(){
  const targets=candidateQueue.slice();
  const accepted=confirm("PUBLISH PROMOTIONAL COMMENT\n\nAccount: @do2earn\nHashtag: #"+lastTag+"\nEligible posts: "+targets.length+"\nMinimum delay: 60 seconds between publishing attempts\n\nYou have reviewed the rendered HTML preview. The bot will publish this comment to each listed post, one at a time. Only proceed if it is relevant to those posts and complies with Steem/community rules.");
  if(!accepted)return;
- batchRunning=true;stopRequested=false;previewPublishBtn.disabled=true;campaignSelect.disabled=true;commentEditor.disabled=true;checkBtn.disabled=true;clearBtn.disabled=true;cancelPublishBtn.hidden=false;cancelPublishBtn.disabled=false;
- let success=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
- progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch");
+ batchRunning=true;stopRequested=false;batchStartedAt=performance.now();previewPublishBtn.disabled=true;campaignSelect.disabled=true;commentEditor.disabled=true;checkBtn.disabled=true;clearBtn.disabled=true;cancelPublishBtn.hidden=false;cancelPublishBtn.disabled=false;
+ let success=0,unconfirmed=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
+ progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch",unconfirmed);
  try{
   for(let i=0;i<targets.length;i++){
    if(stopRequested)break;
@@ -224,14 +240,27 @@ async function previewAndPublish(){
    }
    publishStatus.textContent="Publishing "+(i+1)+"/"+targets.length+" to @"+post.author+"…";publishStatus.className="status";
    lastPublishAt=Date.now();
-   try{await publishBodyTo(post,body);success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink});completedIds.add(post.author+"/"+post.permlink)}
+   try{
+    const submitted=await publishBodyTo(post,body);
+    const confirmed=await verifyPublishedComment(post,submitted.permlink);
+    completedIds.add(post.author+"/"+post.permlink);
+    if(confirmed){
+     success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink,commentPermlink:submitted.permlink});
+    }else{
+     unconfirmed++;
+     publishStatus.textContent="Submission sent to @"+post.author+", but the comment could not be independently verified. It will not be counted as successful; check the post before retrying.";
+     publishStatus.className="status warn";
+    }
+   }
    catch(e){failed++;publishStatus.textContent="Failed for @"+post.author+": "+(e.message||"Steem RPC error");publishStatus.className="status error"}
-   done++;updateProgress(done,targets.length,success,skipped,failed,"Last target: @"+post.author);
+   done++;updateProgress(done,targets.length,success,skipped,failed,"Last target: @"+post.author,unconfirmed);
   }
  }finally{
   batchRunning=false;previewPublishBtn.disabled=false;campaignSelect.disabled=false;commentEditor.disabled=false;checkBtn.disabled=false;clearBtn.disabled=false;cancelPublishBtn.hidden=true;cancelPublishBtn.disabled=false;
-  if(stopRequested){publishStatus.textContent="Batch cancelled. Published: "+success+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+".";publishStatus.className="status warn"}
-  else{publishStatus.textContent="Batch finished. Published: "+success+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+".";publishStatus.className=failed?"status warn":"status ok"}
+  const elapsedText=formatElapsed(performance.now()-batchStartedAt);
+  if(stopRequested){publishStatus.textContent="Batch cancelled. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+" · Total duration: "+elapsedText+".";publishStatus.className="status warn"}
+  else{publishStatus.textContent="Batch finished. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText+".";publishStatus.className=(failed||unconfirmed)?"status warn":"status ok"}
+  progressDetail.textContent="Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText;
   if(successfulPosts.length){const box=document.getElementById("publishedResults"),list=document.getElementById("publishedList");list.replaceChildren();successfulPosts.forEach((post,index)=>{const row=document.createElement("div");row.className="candidate";const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent=(index+1)+". "+post.title;link.style.color="var(--blue)";link.style.fontWeight="700";row.append(link);const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author;row.append(meta);list.append(row)});box.hidden=false;}
   candidateQueue=candidateQueue.filter(p=>!completedIds.has(p.author+"/"+p.permlink));
   countEl.textContent=String(candidateQueue.length);countLabel.textContent="remaining eligible post(s) in the temporary queue";queueInfo.textContent="Tag: #"+lastTag+" · Remaining queue: "+candidateQueue.length+" post(s).";
