@@ -190,20 +190,44 @@ function updateProgress(done,total,success,skipped,failed,detail,unconfirmed=0){
  progressDetail.textContent="API: "+API_URL+" · Published (verified): "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Elapsed: "+formatElapsed(performance.now()-batchStartedAt)+(detail?" · "+detail:"");
 }
 function waitMs(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
-async function verifyPublishedComment(post,commentPermlink){
- // The broadcast callback alone is not treated as proof that the comment is visible on-chain.
- for(let attempt=0;attempt<4;attempt++){
-  try{
-   const replies=await rpc("condenser_api.get_content_replies",[post.author,post.permlink]);
-   if((Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&r.permlink===commentPermlink))return true;
-  }catch(e){/* Retry transient public-RPC errors before marking the result unconfirmed. */}
-  if(attempt<3)await waitMs(2000);
+async function verifyPublishedComment(post,commentPermlink,expectedBody){
+ // Verify the exact comment object (including parent) against multiple independent RPC nodes.
+ // A broadcast callback or a single node's replies list is not enough to count a success.
+ const nodes=window.SteemApiLibrary.nodes.filter(url=>url!==API_URL).concat(API_URL);
+ for(let attempt=0;attempt<5;attempt++){
+  const checks=await Promise.all(nodes.map(async url=>{
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),7000);
+   try{
+    const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({jsonrpc:"2.0",method:"condenser_api.get_content",params:["do2earn",commentPermlink],id:1}),
+     signal:controller.signal,cache:"no-store"});
+    if(!response.ok)return null;
+    const payload=await response.json(),content=payload&&payload.result;
+    if(payload.error||!content||String(content.author||"").toLowerCase()!=="do2earn"||
+       content.permlink!==commentPermlink||content.parent_author!==post.author||
+       content.parent_permlink!==post.permlink||!String(content.body||"").trim())return null;
+    return url;
+   }catch(e){return null}
+   finally{clearTimeout(timer)}
+  }));
+  const confirmedNodes=[...new Set(checks.filter(Boolean))];
+  if(confirmedNodes.length>=2)return {confirmed:true,nodes:confirmedNodes};
+  if(attempt<4)await waitMs(2500);
  }
- return false;
+ return {confirmed:false,nodes:[]};
 }
 async function publishBodyTo(post,body){
  return new Promise((resolve,reject)=>{
   const permlink="comment-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+  try{
+   // steem.js broadcast uses its own API singleton; align it with the API selected by the probe.
+   if(window.steem&&window.steem.api&&typeof window.steem.api.setOptions==="function"){
+    window.steem.api.setOptions({url:API_URL});
+   }else if(window.steem&&window.steem.api&&typeof window.steem.api.setUrl==="function"){
+    window.steem.api.setUrl(API_URL);
+   }
+  }catch(e){/* Broadcast callback and independent verification below remain authoritative. */}
   window.steem.broadcast.comment(postingKeyInMemory,post.author,post.permlink,"do2earn",permlink,"",body,
    JSON.stringify({app:"do2earn-steem-comment-bot/0.4.0",tags:[lastTag||"steem"]}),
    (err,result)=>err?reject(err):resolve({result,permlink}));
@@ -259,13 +283,13 @@ async function previewAndPublish(){
    lastPublishAt=Date.now();
    try{
     const submitted=await publishBodyTo(post,body);
-    const confirmed=await verifyPublishedComment(post,submitted.permlink);
+    const verification=await verifyPublishedComment(post,submitted.permlink,body);
     completedIds.add(post.author+"/"+post.permlink);
-    if(confirmed){
+    if(verification.confirmed){
      success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink,commentPermlink:submitted.permlink});
     }else{
      unconfirmed++;
-     publishStatus.textContent="Submission sent to @"+post.author+", but the comment could not be independently verified. It will not be counted as successful; check the post before retrying.";
+     publishStatus.textContent="Submission was accepted by the API for @"+post.author+", but 2 independent nodes did not confirm the exact comment. It is NOT counted as successful. Check before retrying; comment permlink: "+submitted.permlink;
      publishStatus.className="status warn";
     }
    }
