@@ -226,7 +226,7 @@ async function previewAndPublish(){
    const post=targets[i];
    try{
     const replies=await rpc("condenser_api.get_content_replies",[post.author,post.permlink]);
-    if(hasPromoComment(replies)){skipped++;done++;completedIds.add(post.author+"/"+post.permlink);updateProgress(done,targets.length,success,skipped,failed,"Skipped existing @do2earn promotion");continue}
+    if(hasPromoComment(replies)){skipped++;done++;completedIds.add(post.author+"/"+post.permlink);updateProgress(done,targets.length,success,skipped,failed,"Skipped existing @do2earn promotion",unconfirmed);continue}
    }catch(e){failed++;done++;updateProgress(done,targets.length,success,skipped,failed,"Could not verify replies for @"+post.author);continue}
    const waitFor=Math.max(0,MIN_PUBLISH_INTERVAL-(Date.now()-lastPublishAt));
    if(waitFor>0){
