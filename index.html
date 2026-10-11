@@ -70,6 +70,20 @@ let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0,successfu
 const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
 function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function tagsOf(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(x=>String(x).toLowerCase()):[]}catch{return []}}
+function formatRelativeTime(created){
+ if(!created)return "Unknown time";
+ const raw=String(created).trim();
+ const timestamp=Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw)?raw:raw+"Z");
+ if(!Number.isFinite(timestamp))return "Unknown time";
+ const seconds=Math.max(0,Math.floor((Date.now()-timestamp)/1000));
+ if(seconds<60)return "Just now";
+ const minutes=Math.floor(seconds/60);if(minutes<60)return minutes+" minute"+(minutes===1?"":"s")+" ago";
+ const hours=Math.floor(minutes/60);if(hours<24)return hours+" hour"+(hours===1?"":"s")+" ago";
+ const days=Math.floor(hours/24);if(days<7)return days+" day"+(days===1?"":"s")+" ago";
+ const weeks=Math.floor(days/7);if(days<30)return weeks+" week"+(weeks===1?"":"s")+" ago";
+ const months=Math.floor(days/30);if(days<365)return months+" month"+(months===1?"":"s")+" ago";
+ const years=Math.floor(days/365);return years+" year"+(years===1?"":"s")+" ago";
+}
 function setStatus(message,kind=""){statusEl.className="status "+kind;statusEl.textContent=message}
 async function rpc(method,params){const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method,params,id:1}),signal:AbortSignal.timeout(20000)});if(!res.ok)throw Error("Steem API HTTP "+res.status);const data=await res.json();if(data.error)throw Error(data.error.message||"Steem API error");return data.result}
 function hasPromoComment(replies){return (Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&promoNeedles.some(n=>String(r.body||"").toLowerCase().includes(n)))}
@@ -151,7 +165,7 @@ function renderCandidates(){
  candidateQueue.forEach((post,index)=>{
   const card=document.createElement("div");card.className="candidate";
   const title=document.createElement("a");title.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);title.target="_blank";title.rel="noopener noreferrer";title.textContent=(index+1)+". "+(post.title||"(Untitled post)");title.style.fontWeight="700";title.style.fontSize="16px";title.style.color="var(--blue)";title.style.textDecoration="none";
-  const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+post.created+" · #"+lastTag;
+  const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+formatRelativeTime(post.created)+" · #"+lastTag;meta.title="Published: "+post.created;
   card.append(title,meta);candidateList.append(card);
  });
 }
