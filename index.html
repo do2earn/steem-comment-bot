@@ -193,7 +193,7 @@ function waitMs(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 async function verifyPublishedComment(post,commentPermlink,expectedBody){
  // Verify the exact comment object (including parent) against multiple independent RPC nodes.
  // A broadcast callback or a single node's replies list is not enough to count a success.
- const nodes=window.SteemApiLibrary.nodes.filter(url=>url!==API_URL).concat(API_URL);
+ const nodes=[...new Set([API_URL,"https://api.justyy.com","https://api.steemit.com","https://api.steem.fans"])];
  for(let attempt=0;attempt<5;attempt++){
   const checks=await Promise.all(nodes.map(async url=>{
    const controller=new AbortController();
@@ -206,7 +206,7 @@ async function verifyPublishedComment(post,commentPermlink,expectedBody){
     const payload=await response.json(),content=payload&&payload.result;
     if(payload.error||!content||String(content.author||"").toLowerCase()!=="do2earn"||
        content.permlink!==commentPermlink||content.parent_author!==post.author||
-       content.parent_permlink!==post.permlink||!String(content.body||"").trim())return null;
+       content.parent_permlink!==post.permlink||String(content.body||"")!==expectedBody)return null;
     return url;
    }catch(e){return null}
    finally{clearTimeout(timer)}
