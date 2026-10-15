@@ -60,15 +60,18 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 </section>
 <section class="card" id="apiDiagnosticsCard">
 <h2>🔧 Steem API diagnostics</h2>
-<p class="hint">Optional tool: test all API endpoints from this browser and sort them by response speed. This read-only test does not change the API selected for publishing.</p>
+<p class="hint">Test all API endpoints from this browser, compare response times, then select one for the bot. A new test does not change the active API until you apply your choice.</p>
 <div class="actions"><button id="testApisBtn" class="btn btn-secondary" type="button">⚡ Test &amp; Sort APIs</button></div>
 <div id="apiTestStatus" class="status" role="status" aria-live="polite">Run a test to compare response times and availability.</div>
+<div id="activeApiStatus" class="status" role="status" aria-live="polite">Active API: automatic selection (fastest available API is chosen when publishing starts).</div>
 <div id="apiTestResults" class="result" hidden style="overflow-x:auto">
-<table style="width:100%;border-collapse:collapse;text-align:left;min-width:440px">
-<thead><tr><th style="padding:9px;border-bottom:1px solid var(--line)">Rank</th><th style="padding:9px;border-bottom:1px solid var(--line)">API endpoint</th><th style="padding:9px;border-bottom:1px solid var(--line)">Status / latency</th><th style="padding:9px;border-bottom:1px solid var(--line)">Head block</th></tr></thead>
+<table style="width:100%;border-collapse:collapse;text-align:left;min-width:500px">
+<thead><tr><th style="padding:9px;border-bottom:1px solid var(--line)">Select</th><th style="padding:9px;border-bottom:1px solid var(--line)">Rank</th><th style="padding:9px;border-bottom:1px solid var(--line)">API endpoint</th><th style="padding:9px;border-bottom:1px solid var(--line)">Status / latency</th><th style="padding:9px;border-bottom:1px solid var(--line)">Head block</th></tr></thead>
 <tbody id="apiTestResultsBody"></tbody>
 </table>
 </div>
+<div class="actions" style="margin-top:12px"><button id="applySelectedApiBtn" class="btn btn-primary" type="button" disabled>✅ Apply Selected API</button></div>
+<p class="small">Unavailable endpoints cannot be selected. An applied choice stays active for this page session and takes priority over automatic API selection.</p>
 </section>
 </div>
 <div id="previewModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="previewTitle"><div class="preview-dialog"><div class="preview-head"><h2 id="previewTitle">👁️ Promotional Comment Preview</h2><button id="closePreviewBtn" class="btn btn-secondary" type="button" style="min-height:40px;padding:7px 12px">Close ✕</button></div><div id="previewBody" class="preview-body"><div class="preview-content"></div></div><div class="preview-actions"><button id="editPreviewBtn" class="btn btn-secondary" type="button">Back to Edit</button><button id="continuePublishBtn" class="btn btn-primary" type="button">Continue to Publish</button></div></div></div>
@@ -76,6 +79,9 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 </main>
 <script>
 let API_URL="https://api.steemit.com";
+let MANUAL_API_URL="";
+let PENDING_API_URL="";
+let LAST_API_TEST_RESULTS=[];
 const API_CANDIDATES=window.SteemApiLibrary.nodes;
 const loginHeading=document.getElementById("loginHeading"),loginHint=document.getElementById("loginHint"),usernameField=document.getElementById("usernameField"),postingKeyField=document.getElementById("postingKeyField"),loginSecurityNote=document.getElementById("loginSecurityNote");
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
@@ -101,12 +107,13 @@ function formatRelativeTime(created){
 function setStatus(message,kind=""){statusEl.className="status "+kind;statusEl.textContent=message}
 async function rpc(method,params){const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",method,params,id:1}),signal:AbortSignal.timeout(20000)});if(!res.ok)throw Error("Steem API HTTP "+res.status);const data=await res.json();if(data.error)throw Error(data.error.message||"Steem API error");return data.result}
 async function selectFastestApi(){
+ if(MANUAL_API_URL)return {url:MANUAL_API_URL,latencyMs:null,headBlockNumber:null,checkedCount:LAST_API_TEST_RESULTS.length,availableCount:1,manual:true};
  const result=await window.SteemApiLibrary.selectFastest({timeoutMs:9000});
  if(result.selected){
   const chosen=result.selected;
-  return {url:chosen.url,latencyMs:chosen.latencyMs,headBlockNumber:chosen.headBlockNumber,checkedCount:result.checkedCount,availableCount:result.availableCount};
+  return {url:chosen.url,latencyMs:chosen.latencyMs,headBlockNumber:chosen.headBlockNumber,checkedCount:result.checkedCount,availableCount:result.availableCount,manual:false};
  }
- return {url:API_URL,latencyMs:null,headBlockNumber:null,checkedCount:result.checkedCount,availableCount:0};
+ return {url:API_URL,latencyMs:null,headBlockNumber:null,checkedCount:result.checkedCount,availableCount:0,manual:false};
 }
 function hasPromoComment(replies){return (Array.isArray(replies)?replies:[]).some(r=>r&&String(r.author).toLowerCase()==="do2earn"&&promoNeedles.some(n=>String(r.body||"").toLowerCase().includes(n)))}
 async function checkPosts(){
@@ -267,12 +274,14 @@ async function previewAndPublish(){
  let success=0,unconfirmed=0,skipped=0,failed=0,done=0;const completedIds=new Set();successfulPosts=[];document.getElementById("publishedResults").hidden=true;document.getElementById("publishedList").replaceChildren();
  progressWrap.style.display="block";updateProgress(0,targets.length,success,skipped,failed,"Starting batch",unconfirmed);
  try{
-  publishStatus.textContent="Selecting Steem API…";publishStatus.className="status";
+  publishStatus.textContent=MANUAL_API_URL?"Using manually selected Steem API…":"Selecting fastest available Steem API…";publishStatus.className="status";
   const apiSelection=await selectFastestApi();
   API_URL=apiSelection.url;
-  const apiSelectionMessage=apiSelection.availableCount
-   ? "Selected Steem API: "+API_URL+" ("+apiSelection.latencyMs+" ms; "+apiSelection.availableCount+"/"+apiSelection.checkedCount+" nodes responded)"
-   : "No candidate API passed the RPC check; using fallback: "+API_URL;
+  const apiSelectionMessage=apiSelection.manual
+   ? "Using manually selected Steem API: "+API_URL
+   : apiSelection.availableCount
+     ? "Selected fastest Steem API: "+API_URL+" ("+apiSelection.latencyMs+" ms; "+apiSelection.availableCount+"/"+apiSelection.checkedCount+" nodes responded)"
+     : "No candidate API passed the RPC check; using fallback: "+API_URL;
   publishStatus.textContent=apiSelectionMessage;publishStatus.className=apiSelection.availableCount?"status ok":"status warn";progressDetail.textContent=apiSelectionMessage;
   for(let i=0;i<targets.length;i++){
    if(stopRequested)break;
@@ -329,30 +338,60 @@ previewPublishBtn.addEventListener("click",previewAndPublish);
 cancelPublishBtn.addEventListener("click",()=>{if(batchRunning){stopRequested=true;cancelPublishBtn.disabled=true;publishStatus.textContent="Cancellation requested; waiting for the current operation to finish.";publishStatus.className="status warn"}});
 const testApisBtn=document.getElementById("testApisBtn");
 const apiTestStatus=document.getElementById("apiTestStatus");
+const activeApiStatus=document.getElementById("activeApiStatus");
 const apiTestResults=document.getElementById("apiTestResults");
 const apiTestResultsBody=document.getElementById("apiTestResultsBody");
+const applySelectedApiBtn=document.getElementById("applySelectedApiBtn");
+function updateActiveApiStatus(){
+ activeApiStatus.className="status "+(MANUAL_API_URL?"ok":"");
+ activeApiStatus.textContent=MANUAL_API_URL
+  ?"Active API: "+MANUAL_API_URL+" (manual selection; used for publishing and post checks)."
+  :"Active API: automatic selection (fastest available API is chosen when publishing starts).";
+}
+function renderApiTestResults(){
+ apiTestResultsBody.replaceChildren();
+ const available=LAST_API_TEST_RESULTS.filter(item=>item.ok);
+ if(!available.length){PENDING_API_URL="";applySelectedApiBtn.disabled=true;return}
+ if(!available.some(item=>item.url===PENDING_API_URL))PENDING_API_URL=MANUAL_API_URL&&available.some(item=>item.url===MANUAL_API_URL)?MANUAL_API_URL:available[0].url;
+ LAST_API_TEST_RESULTS.forEach((item,index)=>{
+  const row=document.createElement("tr");row.className="api-result-row";
+  const selectCell=document.createElement("td");const radio=document.createElement("input");radio.type="radio";radio.name="selectedSteemApi";radio.value=item.url;radio.setAttribute("aria-label","Select "+item.url);radio.disabled=!item.ok;radio.checked=item.url===PENDING_API_URL;
+  radio.addEventListener("change",()=>{if(radio.checked){PENDING_API_URL=item.url;applySelectedApiBtn.disabled=false}});
+  selectCell.append(radio);row.append(selectCell);
+  const rank=document.createElement("td");rank.textContent=String(index+1);row.append(rank);
+  const endpointCell=document.createElement("td");const endpoint=document.createElement("span");endpoint.className="api-endpoint";endpoint.textContent=item.url;endpointCell.append(endpoint);row.append(endpointCell);
+  const statusCell=document.createElement("td");const status=document.createElement("span");status.className=item.ok?"api-ok":"api-fail";status.textContent=item.ok?"Available":"Unavailable";statusCell.append(status,document.createElement("br"));const latency=document.createElement("span");latency.textContent=Number.isFinite(item.latencyMs)?item.latencyMs+" ms":"—";statusCell.append(latency);if(!item.ok){const error=document.createElement("div");error.className="small";error.textContent=item.error||"Request failed";statusCell.append(error)}row.append(statusCell);
+  const block=document.createElement("td");block.textContent=item.ok&&Number.isFinite(item.headBlockNumber)?item.headBlockNumber.toLocaleString():"—";row.append(block);
+  apiTestResultsBody.append(row);
+ });
+ applySelectedApiBtn.disabled=!PENDING_API_URL;
+}
 testApisBtn.addEventListener("click",async()=>{
  testApisBtn.disabled=true;testApisBtn.textContent="⏳ Testing APIs…";
  apiTestStatus.className="status";apiTestStatus.textContent="Testing "+window.SteemApiLibrary.nodes.length+" endpoints in parallel from this browser. This may take up to 9 seconds.";
- apiTestResults.hidden=true;apiTestResultsBody.replaceChildren();
+ apiTestResults.hidden=true;apiTestResultsBody.replaceChildren();applySelectedApiBtn.disabled=true;
  try{
   const results=await window.SteemApiLibrary.checkAll({timeoutMs:9000});
-  results.forEach((item,index)=>{
-   const row=document.createElement("tr");row.className="api-result-row";
-   const rank=document.createElement("td");rank.textContent=String(index+1);row.append(rank);
-   const endpointCell=document.createElement("td");const endpoint=document.createElement("span");endpoint.className="api-endpoint";endpoint.textContent=item.url;endpointCell.append(endpoint);row.append(endpointCell);
-   const statusCell=document.createElement("td");const status=document.createElement("span");status.className=item.ok?"api-ok":"api-fail";status.textContent=item.ok?"Available":"Unavailable";statusCell.append(status,document.createElement("br"));const latency=document.createElement("span");latency.textContent=Number.isFinite(item.latencyMs)?item.latencyMs+" ms":"—";statusCell.append(latency);if(!item.ok){const error=document.createElement("div");error.className="small";error.textContent=item.error||"Request failed";statusCell.append(error)}row.append(statusCell);
-   const block=document.createElement("td");block.textContent=item.ok&&Number.isFinite(item.headBlockNumber)?item.headBlockNumber.toLocaleString():"—";row.append(block);
-   apiTestResultsBody.append(row);
-  });
+  LAST_API_TEST_RESULTS=results;
   const available=results.filter(item=>item.ok).length;
+  PENDING_API_URL=MANUAL_API_URL&&results.some(item=>item.ok&&item.url===MANUAL_API_URL)?MANUAL_API_URL:(available?results.find(item=>item.ok).url:"");
+  renderApiTestResults();
   apiTestStatus.className="status "+(available?"ok":"warn");
-  apiTestStatus.textContent="Test complete: "+available+" of "+results.length+" endpoints responded successfully. Results are sorted by availability first, then lowest response time. Network/CORS errors may reflect browser or endpoint restrictions.";
+  apiTestStatus.textContent="Test complete: "+available+" of "+results.length+" endpoints responded successfully. Results are sorted by availability first, then lowest response time. Choose an available endpoint and press Apply Selected API to activate it.";
   apiTestResults.hidden=false;
  }catch(error){
   apiTestStatus.className="status error";apiTestStatus.textContent="Could not complete the API test: "+(error&&error.message?error.message:"Unknown error");
  }finally{testApisBtn.disabled=false;testApisBtn.textContent="⚡ Test & Sort APIs"}
 });
+applySelectedApiBtn.addEventListener("click",()=>{
+ if(!PENDING_API_URL||!LAST_API_TEST_RESULTS.some(item=>item.ok&&item.url===PENDING_API_URL)){
+  apiTestStatus.className="status error";apiTestStatus.textContent="Select an API that passed the latest test first.";return;
+ }
+ MANUAL_API_URL=PENDING_API_URL;API_URL=MANUAL_API_URL;updateActiveApiStatus();
+ apiTestStatus.className="status ok";apiTestStatus.textContent="Applied successfully. The selected API will be used for post checks and publishing until this page session ends.";
+ renderApiTestResults();
+});
+updateActiveApiStatus();
 loadSelectedTemplate();
 
 
