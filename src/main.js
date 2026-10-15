@@ -131,7 +131,7 @@ async function main() {
     if (candidates.length >= MAX_CANDIDATES) break;
   }
 
-  console.log(`Matching posts inspected: ${matching.length}`);
+  console.log(`Matching posts found in the 100-post sample: ${matching.length}`);
   console.log(`Skipped with existing @do2earn reply: ${skippedExisting}`);
   console.log(`Skipped because replies could not be verified: ${skippedUnverifiable}`);
   if (candidates.length === 0) {
@@ -140,7 +140,7 @@ async function main() {
   }
 
   for (const [index, post] of candidates.entries()) {
-    console.log("\\n----------------------------------------");
+    console.log("\n----------------------------------------");
     console.log(`Candidate ${index + 1}: @${post.author}/${post.permlink}`);
     console.log(`Title: ${cleanText(post.title)}`);
     console.log(`URL: https://www.steemx.org/@${post.author}/${post.permlink}`);
@@ -148,7 +148,7 @@ async function main() {
     console.log(`Suggested campaign: ${campaign.name}`);
   }
 
-  console.log(`\\nRead-only scan complete. ${candidates.length} candidate(s) shown; nothing was posted.`);
+  console.log(`\nRead-only scan complete. ${candidates.length} candidate(s) shown; nothing was posted.`);
 }
 
 main().catch(error => {
