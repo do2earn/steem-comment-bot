@@ -18,7 +18,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 .actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}.status.warn{color:var(--warn)}
 .result{border:1px solid var(--line);border-radius:14px;background:#102038;padding:16px;margin-top:12px}.bigcount{font-size:clamp(25px,6vw,38px);font-weight:800;color:var(--accent);line-height:1.2}.small{color:var(--muted);font-size:13px}.campaign{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:9px;background:#102038}.campaign input{margin-top:5px;accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto}.campaign strong{display:block}.campaign p{margin:5px 0 0;color:var(--muted);font-size:13px}.progress-wrap{margin-top:16px;display:none}.progress-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:7px}.progress{height:12px;border-radius:99px;background:#091322;overflow:hidden;border:1px solid #304765}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}.notice{border-left:3px solid var(--warn);padding:10px 12px;background:#2b2a25;border-radius:7px;color:#f5e6c5;font-size:13px;margin-top:12px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
-.candidate-list{display:grid;gap:10px;margin-top:14px}.api-result-row td{padding:9px;border-bottom:1px solid var(--line);vertical-align:top}.api-result-row:last-child td{border-bottom:0}.api-endpoint{overflow-wrap:anywhere;color:var(--blue)}.api-ok{color:var(--accent);font-weight:700}.api-fail{color:var(--warn);font-weight:700}.candidate-list{display:grid;gap:10px;margin-top:14px}.candidate{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}.candidate p{margin:0}.candidate a{color:var(--blue);overflow-wrap:anywhere}.candidate .btn{justify-self:start}.candidate strong{overflow-wrap:anywhere}
+.candidate-list{display:grid;gap:10px;margin-top:14px}.api-result-row td{padding:7px 5px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13px}.api-result-row:last-child td{border-bottom:0}.api-endpoint{overflow-wrap:anywhere;word-break:break-word;color:var(--blue);font-size:12px;line-height:1.25}.api-ok{color:var(--accent);font-weight:700}.api-fail{color:var(--warn);font-weight:700}.api-results{padding:5px;margin-top:8px}.api-results input[type=radio]{width:18px;height:18px;accent-color:var(--accent);margin:0}.api-actions{margin-top:8px}.api-actions .btn{min-height:42px;padding:9px 12px;font-size:14px}.api-results th{font-size:12px;color:var(--muted);font-weight:600}.api-results td:nth-child(3){white-space:nowrap}.candidate-list{display:grid;gap:10px;margin-top:14px}.candidate{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}.candidate p{margin:0}.candidate a{color:var(--blue);overflow-wrap:anywhere}.candidate .btn{justify-self:start}.candidate strong{overflow-wrap:anywhere}
 .modal-backdrop{position:fixed;inset:0;z-index:1000;background:#050b14eF;display:flex;align-items:center;justify-content:center;padding:12px}.modal-backdrop[hidden]{display:none}.preview-dialog{width:min(900px,100%);max-height:94vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 70px #0009;overflow:hidden}.preview-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.preview-head h2{margin:0;font-size:18px}.preview-body{overflow:auto;padding:16px;background:#fff;color:#20242a;min-height:180px}.preview-content{font:16px/1.55 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}.preview-content img{max-width:100%;height:auto}.preview-content a{color:#075bc8}.preview-content hr{border:0;border-top:1px solid #bbb;margin:1.2em 0}.preview-content pre{white-space:pre-wrap;overflow-wrap:anywhere}.preview-content table{border-collapse:collapse;max-width:100%}.preview-content td,.preview-content th{border:1px solid #bbb;padding:5px}.preview-actions{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}.preview-actions .btn{flex:1}
 @media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}.candidate .btn{width:100%}}
 </style>
@@ -35,8 +35,22 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <p class="small" id="loginSecurityNote">Your Posting Key is not sent to a server, saved in browser storage, or written to GitHub. Refreshing or closing this tab logs you out. Use this page only if you trust the GitHub Pages code currently loaded.</p>
 </section>
 <div id="protectedDashboard" hidden>
+<section class="card" id="apiDiagnosticsCard">
+<h2>2. ⚡ Steem API diagnostics</h2>
+<p class="hint">Check response times and choose the fastest reliable API.</p>
+<div class="actions"><button id="testApisBtn" class="btn btn-secondary" type="button">⚡ Test &amp; Sort APIs</button></div>
+<div id="apiTestStatus" class="status" role="status" aria-live="polite">Run a test to compare response times and availability.</div>
+<div id="activeApiStatus" class="status small" role="status" aria-live="polite">API: automatic selection</div>
+<div id="apiTestResults" class="result api-results" hidden>
+<table style="width:100%;border-collapse:collapse;text-align:left;table-layout:fixed">
+<thead><tr><th style="width:34px;padding:6px 3px;border-bottom:1px solid var(--line)">Use</th><th style="padding:6px 5px;border-bottom:1px solid var(--line)">API endpoint</th><th style="width:92px;padding:6px 5px;border-bottom:1px solid var(--line)">Ping</th></tr></thead>
+<tbody id="apiTestResultsBody"></tbody>
+</table>
+</div>
+<div class="actions api-actions"><button id="applySelectedApiBtn" class="btn btn-primary" type="button" disabled>Apply selected API</button></div>
+</section>
 <section class="card">
-<h2>2. Choose a hashtag</h2><p class="hint">Press Check. The bot will temporarily hold eligible posts and show only the count, not the post list.</p>
+<h2>3. Choose a hashtag</h2><p class="hint">Press Check. The bot will temporarily hold eligible posts and show only the count, not the post list.</p>
 <div class="field"><label for="tagSelect">Popular hashtags</label><select id="tagSelect"><option value="steemgame">#steemgame</option><option value="gaming">#gaming</option><option value="gameplay">#gameplay</option><option value="play2earn">#play2earn</option><option value="steem">#steem</option><option value="crypto">#crypto</option><option value="introduceyourself">#introduceyourself</option><option value="custom">Other hashtag…</option></select></div>
 <div class="field" style="margin-top:10px"><label for="customTag">Custom hashtag (optional)</label><input id="customTag" placeholder="e.g. steemgame" autocomplete="off" maxlength="32"></div>
 <div class="actions"><button id="checkBtn" class="btn btn-primary" type="button">🔎 Check</button><button id="clearBtn" class="btn btn-secondary" type="button">Clear temporary queue</button></div>
@@ -45,7 +59,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="notice">The search can only check posts returned by the public Steem API. This first version does not claim to have searched all historical posts.</div>
 </section>
 <section class="card">
-<h2>3. Promotional comment</h2><p class="hint">Campaign messages are saved as separate HTML files. Select one, edit it below, preview the target posts, then explicitly confirm before publishing.</p>
+<h2>4. Promotional comment</h2><p class="hint">Campaign messages are saved as separate HTML files. Select one, edit it below, preview the target posts, then explicitly confirm before publishing.</p>
 <div class="field"><label for="campaignSelect">Saved HTML comment</label><select id="campaignSelect">
 <option value="campaigns/steem-flags-earn-steem-now.html">Steem Flags - Earn $STEEM Now!</option>
 <option value="campaigns/steem-flags-earn-more-steem.html">Steem Flags - Earn more $STEEM</option>
@@ -58,21 +72,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
 <div class="notice">Anti-spam safeguards: up to 20 eligible posts per scan, one comment per post, an explicit confirmation before the batch starts, and at least 60 seconds between publishing attempts. You can cancel the batch between attempts.</div>
 </section>
-<section class="card" id="apiDiagnosticsCard">
-<h2>🔧 Steem API diagnostics</h2>
-<p class="hint">Test all API endpoints from this browser, compare response times, then select one for the bot. A new test does not change the active API until you apply your choice.</p>
-<div class="actions"><button id="testApisBtn" class="btn btn-secondary" type="button">⚡ Test &amp; Sort APIs</button></div>
-<div id="apiTestStatus" class="status" role="status" aria-live="polite">Run a test to compare response times and availability.</div>
-<div id="activeApiStatus" class="status" role="status" aria-live="polite">Active API: automatic selection (fastest available API is chosen when publishing starts).</div>
-<div id="apiTestResults" class="result" hidden style="overflow-x:auto">
-<table style="width:100%;border-collapse:collapse;text-align:left;min-width:500px">
-<thead><tr><th style="padding:9px;border-bottom:1px solid var(--line)">Select</th><th style="padding:9px;border-bottom:1px solid var(--line)">Rank</th><th style="padding:9px;border-bottom:1px solid var(--line)">API endpoint</th><th style="padding:9px;border-bottom:1px solid var(--line)">Status / latency</th><th style="padding:9px;border-bottom:1px solid var(--line)">Head block</th></tr></thead>
-<tbody id="apiTestResultsBody"></tbody>
-</table>
-</div>
-<div class="actions" style="margin-top:12px"><button id="applySelectedApiBtn" class="btn btn-primary" type="button" disabled>✅ Apply Selected API</button></div>
-<p class="small">Unavailable endpoints cannot be selected. An applied choice stays active for this page session and takes priority over automatic API selection.</p>
-</section>
+
 </div>
 <div id="previewModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="previewTitle"><div class="preview-dialog"><div class="preview-head"><h2 id="previewTitle">👁️ Promotional Comment Preview</h2><button id="closePreviewBtn" class="btn btn-secondary" type="button" style="min-height:40px;padding:7px 12px">Close ✕</button></div><div id="previewBody" class="preview-body"><div class="preview-content"></div></div><div class="preview-actions"><button id="editPreviewBtn" class="btn btn-secondary" type="button">Back to Edit</button><button id="continuePublishBtn" class="btn btn-primary" type="button">Continue to Publish</button></div></div></div>
 <div class="footer">Do2Earn · This bot is restricted to @do2earn</div>
@@ -345,30 +345,28 @@ const applySelectedApiBtn=document.getElementById("applySelectedApiBtn");
 function updateActiveApiStatus(){
  activeApiStatus.className="status "+(MANUAL_API_URL?"ok":"");
  activeApiStatus.textContent=MANUAL_API_URL
-  ?"Active API: "+MANUAL_API_URL+" (manual selection; used for publishing and post checks)."
-  :"Active API: automatic selection (fastest available API is chosen when publishing starts).";
+  ?"Active: "+MANUAL_API_URL
+  :"Active: automatic (fastest available)";
 }
 function renderApiTestResults(){
  apiTestResultsBody.replaceChildren();
  const available=LAST_API_TEST_RESULTS.filter(item=>item.ok);
  if(!available.length){PENDING_API_URL="";applySelectedApiBtn.disabled=true;return}
  if(!available.some(item=>item.url===PENDING_API_URL))PENDING_API_URL=MANUAL_API_URL&&available.some(item=>item.url===MANUAL_API_URL)?MANUAL_API_URL:available[0].url;
- LAST_API_TEST_RESULTS.forEach((item,index)=>{
+ LAST_API_TEST_RESULTS.forEach(item=>{
   const row=document.createElement("tr");row.className="api-result-row";
   const selectCell=document.createElement("td");const radio=document.createElement("input");radio.type="radio";radio.name="selectedSteemApi";radio.value=item.url;radio.setAttribute("aria-label","Select "+item.url);radio.disabled=!item.ok;radio.checked=item.url===PENDING_API_URL;
   radio.addEventListener("change",()=>{if(radio.checked){PENDING_API_URL=item.url;applySelectedApiBtn.disabled=false}});
   selectCell.append(radio);row.append(selectCell);
-  const rank=document.createElement("td");rank.textContent=String(index+1);row.append(rank);
   const endpointCell=document.createElement("td");const endpoint=document.createElement("span");endpoint.className="api-endpoint";endpoint.textContent=item.url;endpointCell.append(endpoint);row.append(endpointCell);
-  const statusCell=document.createElement("td");const status=document.createElement("span");status.className=item.ok?"api-ok":"api-fail";status.textContent=item.ok?"Available":"Unavailable";statusCell.append(status,document.createElement("br"));const latency=document.createElement("span");latency.textContent=Number.isFinite(item.latencyMs)?item.latencyMs+" ms":"—";statusCell.append(latency);if(!item.ok){const error=document.createElement("div");error.className="small";error.textContent=item.error||"Request failed";statusCell.append(error)}row.append(statusCell);
-  const block=document.createElement("td");block.textContent=item.ok&&Number.isFinite(item.headBlockNumber)?item.headBlockNumber.toLocaleString():"—";row.append(block);
+  const pingCell=document.createElement("td");const ping=document.createElement("span");ping.className=item.ok?"api-ok":"api-fail";ping.textContent=item.ok&&Number.isFinite(item.latencyMs)?item.latencyMs+" ms":"Failed";pingCell.append(ping);row.append(pingCell);
   apiTestResultsBody.append(row);
  });
  applySelectedApiBtn.disabled=!PENDING_API_URL;
 }
 testApisBtn.addEventListener("click",async()=>{
  testApisBtn.disabled=true;testApisBtn.textContent="⏳ Testing APIs…";
- apiTestStatus.className="status";apiTestStatus.textContent="Testing "+window.SteemApiLibrary.nodes.length+" endpoints in parallel from this browser. This may take up to 9 seconds.";
+ apiTestStatus.className="status";apiTestStatus.textContent="Testing API response times…";
  apiTestResults.hidden=true;apiTestResultsBody.replaceChildren();applySelectedApiBtn.disabled=true;
  try{
   const results=await window.SteemApiLibrary.checkAll({timeoutMs:9000});
@@ -377,7 +375,7 @@ testApisBtn.addEventListener("click",async()=>{
   PENDING_API_URL=MANUAL_API_URL&&results.some(item=>item.ok&&item.url===MANUAL_API_URL)?MANUAL_API_URL:(available?results.find(item=>item.ok).url:"");
   renderApiTestResults();
   apiTestStatus.className="status "+(available?"ok":"warn");
-  apiTestStatus.textContent="Test complete: "+available+" of "+results.length+" endpoints responded successfully. Results are sorted by availability first, then lowest response time. Choose an available endpoint and press Apply Selected API to activate it.";
+  apiTestStatus.textContent=available+" of "+results.length+" APIs responded. Lowest response time is listed first.";
   apiTestResults.hidden=false;
  }catch(error){
   apiTestStatus.className="status error";apiTestStatus.textContent="Could not complete the API test: "+(error&&error.message?error.message:"Unknown error");
@@ -388,7 +386,7 @@ applySelectedApiBtn.addEventListener("click",()=>{
   apiTestStatus.className="status error";apiTestStatus.textContent="Select an API that passed the latest test first.";return;
  }
  MANUAL_API_URL=PENDING_API_URL;API_URL=MANUAL_API_URL;updateActiveApiStatus();
- apiTestStatus.className="status ok";apiTestStatus.textContent="Applied successfully. The selected API will be used for post checks and publishing until this page session ends.";
+ apiTestStatus.className="status ok";apiTestStatus.textContent="Selected API applied for this session.";
  renderApiTestResults();
 });
 updateActiveApiStatus();
