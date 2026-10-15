@@ -1,13 +1,17 @@
 {
   "name": "do2earn-steem-comment-bot",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "Browser-only Steem comment tool for @do2earn with dry-run GitHub Actions discovery",
+  "description": "Steem comment campaign tool for @do2earn with server-side API diagnostics and explicitly confirmed GitHub Actions publishing",
   "type": "module",
   "scripts": {
-    "start": "node src/main.js"
+    "start": "node src/main.js",
+    "publish": "node src/publish.js"
+  },
+  "dependencies": {
+    "@steemit/steem-js": "1.2.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   }
 }
