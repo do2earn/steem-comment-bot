@@ -171,6 +171,10 @@ async function main() {
 
   if (!eligible.length) {
     console.log("No eligible targets found after duplicate checks.");
+    console.log("\\n========== FINAL REPORT ==========");
+    console.log(`Selected API: ${apiUrl}`);
+    console.log(`Mode: ${CONFIRM_PUBLISH ? "PUBLISH" : "DRY RUN"}`);
+    console.log("Verified published: 0 | Unconfirmed: 0 | Failed: 0");
     console.log(`Total duration: ${Math.round((Date.now() - startedAt) / 1000)} seconds.`);
     return;
   }
