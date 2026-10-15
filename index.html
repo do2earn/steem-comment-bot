@@ -286,7 +286,7 @@ async function previewAndPublish(){
     const verification=await verifyPublishedComment(post,submitted.permlink,body);
     completedIds.add(post.author+"/"+post.permlink);
     if(verification.confirmed){
-     success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink,commentPermlink:submitted.permlink});
+     success++;successfulPosts.push({title:post.title||"(Untitled post)",author:post.author,permlink:post.permlink,created:post.created,commentPermlink:submitted.permlink});
     }else{
      unconfirmed++;
      publishStatus.textContent="Submission was accepted by the API for @"+post.author+", but 2 independent nodes did not confirm the exact comment. It is NOT counted as successful. Check before retrying; comment permlink: "+submitted.permlink;
@@ -299,10 +299,10 @@ async function previewAndPublish(){
  }finally{
   batchRunning=false;previewPublishBtn.disabled=false;campaignSelect.disabled=false;commentEditor.disabled=false;checkBtn.disabled=false;clearBtn.disabled=false;cancelPublishBtn.hidden=true;cancelPublishBtn.disabled=false;
   const elapsedText=formatElapsed(performance.now()-batchStartedAt);
-  if(stopRequested){publishStatus.textContent="Batch cancelled. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+" · Total duration: "+elapsedText+".";publishStatus.className="status warn"}
-  else{publishStatus.textContent="Batch finished. Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText+".";publishStatus.className=(failed||unconfirmed)?"status warn":"status ok"}
+  if(stopRequested){publishStatus.textContent="Batch cancelled. API: "+API_URL+" · Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Not processed: "+(targets.length-done)+" · Total duration: "+elapsedText+".";publishStatus.className="status warn"}
+  else{publishStatus.textContent="Batch finished. API: "+API_URL+" · Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped (existing promo): "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText+".";publishStatus.className=(failed||unconfirmed)?"status warn":"status ok"}
   progressDetail.textContent="Selected Steem API: "+API_URL+" · Verified published: "+success+" · Unconfirmed: "+unconfirmed+" · Skipped: "+skipped+" · Failed: "+failed+" · Total duration: "+elapsedText;
-  if(successfulPosts.length){const box=document.getElementById("publishedResults"),list=document.getElementById("publishedList");list.replaceChildren();successfulPosts.forEach((post,index)=>{const row=document.createElement("div");row.className="candidate";const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent=(index+1)+". "+post.title;link.style.color="var(--blue)";link.style.fontWeight="700";row.append(link);const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author;row.append(meta);list.append(row)});box.hidden=false;}
+  if(successfulPosts.length){const box=document.getElementById("publishedResults"),list=document.getElementById("publishedList");list.replaceChildren();successfulPosts.forEach((post,index)=>{const row=document.createElement("div");row.className="candidate";const link=document.createElement("a");link.href="https://steemx.org/@"+encodeURIComponent(post.author)+"/"+encodeURIComponent(post.permlink);link.target="_blank";link.rel="noopener noreferrer";link.textContent=(index+1)+". "+post.title;link.style.color="var(--blue)";link.style.fontWeight="700";row.append(link);const meta=document.createElement("p");meta.className="small";meta.textContent="@"+post.author+" · "+formatRelativeTime(post.created);meta.title="Published: "+post.created;row.append(meta);list.append(row)});box.hidden=false;}
   candidateQueue=candidateQueue.filter(p=>!completedIds.has(p.author+"/"+p.permlink));
   countEl.textContent=String(candidateQueue.length);countLabel.textContent="remaining eligible post(s) in the temporary queue";queueInfo.textContent="Tag: #"+lastTag+" · Remaining queue: "+candidateQueue.length+" post(s).";
   renderCandidates();
