@@ -1,4 +1,4 @@
-name: Steem Comment Bot (Dry Run)
+name: Steem Comment Bot (Server-side API Diagnostics & Dry Run)
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -19,8 +19,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Run dry-run discovery
+      - name: Run API diagnostics and dry-run discovery
         run: npm start
         env:
           DRY_RUN: "true"
-          MAX_CANDIDATES: "5"
+          MAX_CANDIDATES: "20"
