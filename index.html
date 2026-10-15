@@ -18,7 +18,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 .actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 18px;min-height:48px;font:700 16px system-ui;cursor:pointer}.btn-primary{background:var(--accent);color:#082519;flex:1}.btn-secondary{background:#263d5b;color:var(--text)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .status{margin-top:13px;color:var(--muted);font-size:14px;min-height:22px}.status.error{color:#ffaaa8}.status.ok{color:var(--accent)}.status.warn{color:var(--warn)}
 .result{border:1px solid var(--line);border-radius:14px;background:#102038;padding:16px;margin-top:12px}.bigcount{font-size:clamp(25px,6vw,38px);font-weight:800;color:var(--accent);line-height:1.2}.small{color:var(--muted);font-size:13px}.campaign{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:9px;background:#102038}.campaign input{margin-top:5px;accent-color:var(--accent);width:18px;height:18px;flex:0 0 auto}.campaign strong{display:block}.campaign p{margin:5px 0 0;color:var(--muted);font-size:13px}.progress-wrap{margin-top:16px;display:none}.progress-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:7px}.progress{height:12px;border-radius:99px;background:#091322;overflow:hidden;border:1px solid #304765}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}.notice{border-left:3px solid var(--warn);padding:10px 12px;background:#2b2a25;border-radius:7px;color:#f5e6c5;font-size:13px;margin-top:12px}.safety{font-size:13px;color:var(--muted);margin:12px 2px 0}.footer{text-align:center;color:#879bb4;font-size:12px;margin-top:22px}
-.candidate-list{display:grid;gap:10px;margin-top:14px}.candidate{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}.candidate p{margin:0}.candidate a{color:var(--blue);overflow-wrap:anywhere}.candidate .btn{justify-self:start}.candidate strong{overflow-wrap:anywhere}
+.candidate-list{display:grid;gap:10px;margin-top:14px}.api-result-row td{padding:9px;border-bottom:1px solid var(--line);vertical-align:top}.api-result-row:last-child td{border-bottom:0}.api-endpoint{overflow-wrap:anywhere;color:var(--blue)}.api-ok{color:var(--accent);font-weight:700}.api-fail{color:var(--warn);font-weight:700}.candidate-list{display:grid;gap:10px;margin-top:14px}.candidate{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px}.candidate p{margin:0}.candidate a{color:var(--blue);overflow-wrap:anywhere}.candidate .btn{justify-self:start}.candidate strong{overflow-wrap:anywhere}
 .modal-backdrop{position:fixed;inset:0;z-index:1000;background:#050b14eF;display:flex;align-items:center;justify-content:center;padding:12px}.modal-backdrop[hidden]{display:none}.preview-dialog{width:min(900px,100%);max-height:94vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 70px #0009;overflow:hidden}.preview-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.preview-head h2{margin:0;font-size:18px}.preview-body{overflow:auto;padding:16px;background:#fff;color:#20242a;min-height:180px}.preview-content{font:16px/1.55 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}.preview-content img{max-width:100%;height:auto}.preview-content a{color:#075bc8}.preview-content hr{border:0;border-top:1px solid #bbb;margin:1.2em 0}.preview-content pre{white-space:pre-wrap;overflow-wrap:anywhere}.preview-content table{border-collapse:collapse;max-width:100%}.preview-content td,.preview-content th{border:1px solid #bbb;padding:5px}.preview-actions{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}.preview-actions .btn{flex:1}
 @media(max-width:560px){main{padding:15px 11px 35px}.card{padding:14px;border-radius:15px}.actions{flex-direction:column}.btn-secondary{width:100%}.brand{align-items:flex-start}.candidate .btn{width:100%}}
 </style>
@@ -57,6 +57,18 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div id="publishedResults" class="result" hidden><h3 style="margin:0 0 10px">✅ Successfully published comments</h3><div id="publishedList" class="candidate-list"></div></div>
 <div class="progress-wrap" id="progressWrap"><div class="progress-meta"><span id="progressLabel">Waiting…</span><strong id="progressPct">0%</strong></div><div class="progress"><div class="bar" id="progressBar"></div></div><p id="progressDetail" class="small"></p></div>
 <div class="notice">Anti-spam safeguards: up to 20 eligible posts per scan, one comment per post, an explicit confirmation before the batch starts, and at least 60 seconds between publishing attempts. You can cancel the batch between attempts.</div>
+</section>
+<section class="card" id="apiDiagnosticsCard">
+<h2>🔧 Steem API diagnostics</h2>
+<p class="hint">Optional tool: test all API endpoints from this browser and sort them by response speed. This read-only test does not change the API selected for publishing.</p>
+<div class="actions"><button id="testApisBtn" class="btn btn-secondary" type="button">⚡ Test &amp; Sort APIs</button></div>
+<div id="apiTestStatus" class="status" role="status" aria-live="polite">Run a test to compare response times and availability.</div>
+<div id="apiTestResults" class="result" hidden style="overflow-x:auto">
+<table style="width:100%;border-collapse:collapse;text-align:left;min-width:440px">
+<thead><tr><th style="padding:9px;border-bottom:1px solid var(--line)">Rank</th><th style="padding:9px;border-bottom:1px solid var(--line)">API endpoint</th><th style="padding:9px;border-bottom:1px solid var(--line)">Status / latency</th><th style="padding:9px;border-bottom:1px solid var(--line)">Head block</th></tr></thead>
+<tbody id="apiTestResultsBody"></tbody>
+</table>
+</div>
 </section>
 </div>
 <div id="previewModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="previewTitle"><div class="preview-dialog"><div class="preview-head"><h2 id="previewTitle">👁️ Promotional Comment Preview</h2><button id="closePreviewBtn" class="btn btn-secondary" type="button" style="min-height:40px;padding:7px 12px">Close ✕</button></div><div id="previewBody" class="preview-body"><div class="preview-content"></div></div><div class="preview-actions"><button id="editPreviewBtn" class="btn btn-secondary" type="button">Back to Edit</button><button id="continuePublishBtn" class="btn btn-primary" type="button">Continue to Publish</button></div></div></div>
@@ -315,6 +327,32 @@ previewModal.addEventListener("click",e=>{if(e.target===previewModal)closePrevie
 continuePublishBtn.addEventListener("click",()=>{if(!isAuthenticated||!postingKeyInMemory){closePreview();showLoggedOut("Session expired. Enter the Posting Key again.");return}previewApproved=true;closePreview();previewApproved=true;previewAndPublish()});
 previewPublishBtn.addEventListener("click",previewAndPublish);
 cancelPublishBtn.addEventListener("click",()=>{if(batchRunning){stopRequested=true;cancelPublishBtn.disabled=true;publishStatus.textContent="Cancellation requested; waiting for the current operation to finish.";publishStatus.className="status warn"}});
+const testApisBtn=document.getElementById("testApisBtn");
+const apiTestStatus=document.getElementById("apiTestStatus");
+const apiTestResults=document.getElementById("apiTestResults");
+const apiTestResultsBody=document.getElementById("apiTestResultsBody");
+testApisBtn.addEventListener("click",async()=>{
+ testApisBtn.disabled=true;testApisBtn.textContent="⏳ Testing APIs…";
+ apiTestStatus.className="status";apiTestStatus.textContent="Testing "+window.SteemApiLibrary.nodes.length+" endpoints in parallel from this browser. This may take up to 9 seconds.";
+ apiTestResults.hidden=true;apiTestResultsBody.replaceChildren();
+ try{
+  const results=await window.SteemApiLibrary.checkAll({timeoutMs:9000});
+  results.forEach((item,index)=>{
+   const row=document.createElement("tr");row.className="api-result-row";
+   const rank=document.createElement("td");rank.textContent=String(index+1);row.append(rank);
+   const endpointCell=document.createElement("td");const endpoint=document.createElement("span");endpoint.className="api-endpoint";endpoint.textContent=item.url;endpointCell.append(endpoint);row.append(endpointCell);
+   const statusCell=document.createElement("td");const status=document.createElement("span");status.className=item.ok?"api-ok":"api-fail";status.textContent=item.ok?"Available":"Unavailable";statusCell.append(status,document.createElement("br"));const latency=document.createElement("span");latency.textContent=Number.isFinite(item.latencyMs)?item.latencyMs+" ms":"—";statusCell.append(latency);if(!item.ok){const error=document.createElement("div");error.className="small";error.textContent=item.error||"Request failed";statusCell.append(error)}row.append(statusCell);
+   const block=document.createElement("td");block.textContent=item.ok&&Number.isFinite(item.headBlockNumber)?item.headBlockNumber.toLocaleString():"—";row.append(block);
+   apiTestResultsBody.append(row);
+  });
+  const available=results.filter(item=>item.ok).length;
+  apiTestStatus.className="status "+(available?"ok":"warn");
+  apiTestStatus.textContent="Test complete: "+available+" of "+results.length+" endpoints responded successfully. Results are sorted by availability first, then lowest response time. Network/CORS errors may reflect browser or endpoint restrictions.";
+  apiTestResults.hidden=false;
+ }catch(error){
+  apiTestStatus.className="status error";apiTestStatus.textContent="Could not complete the API test: "+(error&&error.message?error.message:"Unknown error");
+ }finally{testApisBtn.disabled=false;testApisBtn.textContent="⚡ Test & Sort APIs"}
+});
 loadSelectedTemplate();
 
 
