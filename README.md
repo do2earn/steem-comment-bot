@@ -1,45 +1,41 @@
 # Do2Earn Steem Comment Bot
 
-Browser-based comment campaign tool for the Steem account **@do2earn**, with GitHub Actions for server-side API diagnostics, dry-run discovery, and a separate manually triggered publishing workflow. It uses no Cloudflare Worker or Cloudflare D1.
+Browser-based promotional comment tool for the Steem account **@do2earn**. The website is hosted on GitHub Pages. GitHub Actions performs read-only Steem API diagnostics and candidate discovery. **Only the browser session that you control handles the Posting Key, signs comments, and broadcasts them to Steem.** No Cloudflare Worker or D1 is used.
 
-## Current architecture
-
-- The scheduled `bot.yml` workflow tests configured Steem RPC endpoints from the GitHub Actions runner, selects the fastest healthy endpoint within 20 blocks of the newest healthy endpoint, and performs read-only discovery.
-- Discovery inspects up to 100 recent posts and prints up to 20 matching candidates in the scheduled dry-run log.
-- The separate `publish.yml` workflow is manual only; it has no schedule or push trigger.
-- Publishing is disabled by default. To publish, the workflow input `confirm_publish` must be enabled and `confirm_account` must be exactly `@do2earn`.
-- The Posting Key secret is injected into the publishing process only when both explicit confirmation inputs match. The script checks that the WIF key corresponds to a direct key in @do2earn's Posting authority before broadcasting.
-- Before publishing, the script checks for any existing @do2earn reply on each target and skips targets where it cannot safely verify replies. It waits 60 seconds between broadcast attempts and polls the selected API for the published reply.
-- The final report includes the selected API, each target's SteemX link, the original post publication timestamp, verified/unconfirmed/failed totals, and total duration.
-- The browser dashboard remains available for interactive login and manual publishing. Server-side Actions runs do not depend on the phone's internet connection.
-
-## Browser-only login and key handling
+## Security boundary
 
 - The username is fixed to `@do2earn`.
-- In the browser dashboard, the Posting Key is held only in JavaScript memory for the open tab; it is not written to browser storage or a database.
+- The Posting Key is entered only in the browser dashboard and held in JavaScript memory for the open tab.
+- The key is not sent to GitHub Actions, a server, a database, or browser storage. Never create a GitHub secret for the Posting Key.
 - Logout, refreshing, or closing the tab clears the in-memory browser session.
-- Do not enter the Posting Key in source files, campaign JSON, workflow YAML, issues, or chat messages.
+- The browser signs and broadcasts the comment directly to the selected Steem RPC endpoint. Therefore, keep the dashboard open and connected while a batch is running.
+- Use the dashboard only after reviewing the public source code loaded from GitHub Pages. Do not enter your key if you do not trust the deployed code.
 
-## Configure the publishing secret
+## GitHub Actions
 
-1. Open the repository Settings.
-2. Go to **Secrets and variables → Actions**.
-3. Create a repository secret named exactly `STEEM_POSTING_KEY`.
-4. Paste the Posting Key value into that secret field only. Never commit it to the repository and never print it in logs.
+The scheduled/manual `bot.yml` workflow is **read-only**:
 
-The secret is not needed by the scheduled workflow. The manual publishing workflow only passes it to the publishing script when both confirmation inputs are supplied. Anyone with write access to a repository can potentially modify workflows and access repository secrets, so keep write access restricted and review changes to `.github/workflows/` and dependencies carefully. GitHub secret masking is not a guarantee against malicious code.
+- Tests configured public Steem RPC endpoints from the GitHub Actions runner and selects the fastest healthy endpoint within 20 blocks of the newest healthy endpoint.
+- Scans up to 100 recent posts for the configured campaign tags and keywords.
+- Checks replies before listing candidates. It skips posts that already have an `@do2earn` reply and skips a post if its replies cannot be verified.
+- Prints candidate links using SteemX and the original post publication timestamps in the workflow log.
+- It never asks for, reads, or uses a Posting Key and cannot publish comments.
 
-## Manual workflow steps
+The dashboard independently checks current posts and duplicate replies in the browser before offering a publish batch. The Actions discovery log is a diagnostic/report, not a live backend or an API endpoint consumed by the static dashboard.
 
-1. Open **Actions → Steem Comment Bot — Manual Publish (Safe Default) → Run workflow**.
-2. Leave **Enable publishing** unchecked for a dry-run preview.
-3. For actual publication only, check **Enable publishing** and type exactly `@do2earn` in the confirmation field.
-4. Start with a low maximum (1 or 3 comments), review the output, and only increase the count when the results are appropriate.
+## Publish comments from the dashboard
 
-The publishing workflow is intentionally manual, capped at 10 comments per run, and serialized so two runs cannot publish concurrently. It uses a 60-second gap between broadcast attempts. An accepted broadcast that is not visible in the follow-up RPC checks is reported as unconfirmed, not as verified success.
+1. Open the GitHub Pages website and log in as `@do2earn` using the Posting Key.
+2. Test the Steem API endpoints and apply the endpoint you want to use.
+3. Choose a hashtag and press **Check**.
+4. Review the candidate posts and select/edit the promotional comment.
+5. Use **Preview & Publish** and explicitly confirm the batch.
+6. Keep the browser tab open and online until the report is complete. Comments are signed and broadcast from the browser; GitHub Actions does not publish them.
 
-## Campaigns and community rules
+The dashboard includes safeguards such as duplicate-reply checks, a capped batch, confirmation before publishing, a delay between publishing attempts, and a final report with the selected API, SteemX post links, original post dates, verified/unconfirmed/failed totals, and duration. Review the results carefully and follow Steem/community rules; relevance filtering cannot guarantee that every target is appropriate.
+
+## Campaign content
 
 - Saved promotional campaigns are in `campaigns/`.
-- The current Steem Flags comment is defined in `campaigns/steem-flags.json`.
-- Relevance filtering and duplicate checks reduce accidental repetition but cannot guarantee that every target is appropriate. Review dry-run output before enabling publication and follow Steem/community rules.
+- The dashboard's HTML comment files are selectable in the campaign menu.
+- The read-only Actions discovery workflow uses `campaigns/steem-flags.json` for its tags and keyword filter.
