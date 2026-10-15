@@ -73,7 +73,7 @@ function normalizeTags(metadata) {
 }
 
 function cleanText(value) {
-  return String(value || "").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim();
+  return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 async function main() {
@@ -112,7 +112,7 @@ async function main() {
   }
 
   for (const [index, post] of candidates.entries()) {
-    console.log("\\n----------------------------------------");
+    console.log("\n----------------------------------------");
     console.log(`Candidate ${index + 1}: @${post.author}/${post.permlink}`);
     console.log(`Title: ${cleanText(post.title)}`);
     console.log(`URL: https://www.steemx.org/@${post.author}/${post.permlink}`);
@@ -122,7 +122,7 @@ async function main() {
     console.log(campaign.comment);
   }
 
-  console.log(`\\nDry run complete. ${candidates.length} candidate(s) shown; nothing was posted.`);
+  console.log(`\nDry run complete. ${candidates.length} candidate(s) shown; nothing was posted.`);
 }
 
 main().catch(error => {
