@@ -1,0 +1,88 @@
+name: Steem API Post Test
+
+on:
+  push:
+    paths:
+      - ".github/workflows/steem-api-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Fetch Steem Flags post from the Steem blockchain
+        env:
+          STEEM_API_URL: https://api.steemit.com
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          import urllib.error
+
+          payload = {
+              "jsonrpc": "2.0",
+              "method": "condenser_api.get_content",
+              "params": [
+                  "dannyben39",
+                  "my-steem-flags-gameplay-today-2020-perfect-score-and-great-lessons--20261013193036"
+              ],
+              "id": 1
+          }
+          request = urllib.request.Request(
+              os.environ["STEEM_API_URL"],
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json", "User-Agent": "Steem-Games-Analyst-API-Test/1.0"},
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=25) as response:
+                  result = json.loads(response.read().decode("utf-8"))
+          except Exception as exc:
+              print(f"API_REQUEST_FAILED: {type(exc).__name__}: {exc}")
+              raise SystemExit(1)
+
+          if "error" in result:
+              print("API_RETURNED_ERROR:")
+              print(json.dumps(result["error"], indent=2))
+              raise SystemExit(1)
+
+          post = result.get("result")
+          if not post or not post.get("author"):
+              print("POST_NOT_FOUND_OR_EMPTY:")
+              print(json.dumps(result, indent=2))
+              raise SystemExit(1)
+
+          metadata = post.get("json_metadata") or "{}"
+          try:
+              metadata = json.loads(metadata) if isinstance(metadata, str) else metadata
+          except json.JSONDecodeError:
+              metadata = {}
+
+          output = {
+              "author": post.get("author"),
+              "permlink": post.get("permlink"),
+              "category": post.get("category"),
+              "title": post.get("title"),
+              "created": post.get("created"),
+              "last_update": post.get("last_update"),
+              "children": post.get("children"),
+              "active_votes_count": len(post.get("active_votes") or []),
+              "tags": metadata.get("tags", []),
+              "pending_payout_value": post.get("pending_payout_value"),
+              "total_payout_value": post.get("total_payout_value"),
+              "curator_payout_value": post.get("curator_payout_value"),
+              "body_length": post.get("body_length"),
+              "url": f"https://steemit.com/{post.get('category', '')}/@{post.get('author')}/{post.get('permlink')}"
+          }
+
+          print("STEEM_API_TEST_SUCCESS")
+          print(json.dumps(output, indent=2, ensure_ascii=False))
+          print("\nPost body preview (first 1200 characters):")
+          print((post.get("body") or "")[:1200])
+          PY
