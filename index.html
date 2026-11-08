@@ -63,6 +63,7 @@ main{width:min(760px,100%);margin:auto;padding:22px 15px 50px}.brand{display:fle
 <div class="field"><label for="campaignSelect">Saved HTML comment</label><select id="campaignSelect">
 <option value="campaigns/steem-flags-earn-steem-now.html">Steem Flags - Earn $STEEM Now!</option>
 <option value="campaigns/steem-flags-earn-more-steem.html">Steem Flags - Earn more $STEEM</option>
+<option value="campaigns/steem-games-comment-1.html">Steem Games - Comment 1</option>
 </select></div>
 <div class="field" style="margin-top:12px"><label for="commentEditor">Comment editor (editable)</label><textarea id="commentEditor" rows="8" spellcheck="true" placeholder="Select a saved HTML comment to load its text…"></textarea></div>
 <div class="actions"><button id="previewPublishBtn" class="btn btn-primary" type="button">👁️ Preview &amp; Publish</button><button id="cancelPublishBtn" class="btn btn-secondary" type="button" hidden>Cancel publishing</button></div>
@@ -87,7 +88,7 @@ const loginHeading=document.getElementById("loginHeading"),loginHint=document.ge
 const loginBtn=document.getElementById("loginBtn"),logoutBtn=document.getElementById("logoutBtn"),postingKeyInput=document.getElementById("postingKey"),loginStatus=document.getElementById("loginStatus"),protectedDashboard=document.getElementById("protectedDashboard");
 const tagSelect=document.getElementById("tagSelect"),customTag=document.getElementById("customTag"),checkBtn=document.getElementById("checkBtn"),clearBtn=document.getElementById("clearBtn"),statusEl=document.getElementById("status"),countBox=document.getElementById("countBox"),countEl=document.getElementById("count"),countLabel=document.getElementById("countLabel"),queueInfo=document.getElementById("queueInfo"),candidateList=document.getElementById("candidateList"),publishStatus=document.getElementById("publishStatus"),campaignSelect=document.getElementById("campaignSelect"),commentEditor=document.getElementById("commentEditor"),previewPublishBtn=document.getElementById("previewPublishBtn"),cancelPublishBtn=document.getElementById("cancelPublishBtn"),progressWrap=document.getElementById("progressWrap"),progressLabel=document.getElementById("progressLabel"),progressPct=document.getElementById("progressPct"),progressBar=document.getElementById("progressBar"),progressDetail=document.getElementById("progressDetail");
 let candidateQueue=[],lastTag="",postingKeyInMemory="",lastPublishAt=0,successfulPosts=[],previewApproved=false;
-const promoNeedles=["steemflags.do2earn.dev","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
+const promoNeedles=["steemflags.do2earn.dev","steemgames.do2earn.dev","steem games directory","free flag-guessing game","flag-guessing game","looking for another game to try on steem"];
 function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function tagsOf(post){try{const m=typeof post.json_metadata==="string"?JSON.parse(post.json_metadata||"{}"):(post.json_metadata||{});return Array.isArray(m.tags)?m.tags.map(x=>String(x).toLowerCase()):[]}catch{return []}}
 function formatRelativeTime(created){
